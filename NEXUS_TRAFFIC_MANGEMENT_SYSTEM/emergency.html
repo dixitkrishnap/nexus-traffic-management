@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>NEXUS — Emergency Response</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{--bg:#060a10;--s1:#0b1018;--s2:#0f1620;--border:#1a2535;--green:#00e676;--amber:#ffab00;--red:#ff1744;--cyan:#00e5ff;--text:#cfd8e3;--muted:#546478;--mono:'IBM Plex Mono',monospace;--ui:'IBM Plex Sans',sans-serif;}
+html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:var(--ui);}
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.04) 3px,rgba(0,0,0,.04) 4px);pointer-events:none;z-index:9999;}
+#top{height:44px;background:var(--s1);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:5px;color:#fff;}
+.logo span{color:var(--red);}
+#nav{display:flex;background:var(--s2);border-bottom:1px solid var(--border);}
+.nav-btn{padding:8px 18px;font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;text-decoration:none;display:flex;align-items:center;gap:6px;}
+.nav-btn:hover{color:var(--text);}
+.nav-btn.active{color:var(--red);border-bottom-color:var(--red);}
+
+/* EMERGENCY STATUS BANNER */
+#emg-banner{background:rgba(255,23,68,.08);border-bottom:2px solid rgba(255,23,68,.3);padding:12px 28px;display:none;align-items:center;justify-content:space-between;}
+#emg-banner.active{display:flex;}
+.emg-pulse{width:12px;height:12px;border-radius:50%;background:var(--red);box-shadow:0 0 12px var(--red);animation:lp 1s infinite;margin-right:8px;}
+@keyframes lp{0%,100%{opacity:1}50%{opacity:.2}}
+.emg-text{font-family:var(--mono);font-size:12px;color:var(--red);font-weight:600;letter-spacing:2px;}
+.emg-clear-btn{font-family:var(--mono);font-size:10px;padding:6px 16px;border:1px solid var(--green);color:var(--green);background:rgba(0,230,118,.08);cursor:pointer;border-radius:3px;}
+.emg-clear-btn:hover{background:rgba(0,230,118,.2);}
+
+/* PAGE */
+#page{display:grid;grid-template-columns:1fr 1fr 300px;gap:1px;background:var(--border);margin:1px;}
+.sec{background:var(--bg);}
+.sec-hd{padding:10px 16px;background:var(--s2);border-bottom:1px solid var(--border);font-family:var(--mono);font-size:8px;font-weight:600;letter-spacing:2.5px;color:var(--muted);text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;}
+.badge{font-size:8px;padding:2px 7px;border-radius:2px;letter-spacing:0;}
+.bg{background:rgba(0,230,118,.1);color:var(--green);border:1px solid rgba(0,230,118,.25);}
+.br{background:rgba(255,23,68,.1);color:var(--red);border:1px solid rgba(255,23,68,.25);}
+
+/* CORRIDOR CARDS */
+.corr-card{margin:12px;border-radius:4px;border:2px solid var(--border);overflow:hidden;transition:all .2s;cursor:pointer;}
+.corr-card:hover{transform:translateY(-2px);}
+.corr-card.amb{border-color:rgba(255,23,68,.5);}
+.corr-card.fire{border-color:rgba(255,109,0,.5);}
+.corr-card.vip{border-color:rgba(255,171,0,.5);}
+.corr-card.lk{border-color:rgba(0,229,255,.5);}
+.cc-header{padding:16px;display:flex;align-items:center;gap:14px;}
+.cc-icon{font-size:32px;line-height:1;}
+.cc-title{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;}
+.cc-sub{font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:2px;}
+.cc-body{padding:12px 16px;border-top:1px solid var(--border);background:rgba(0,0,0,.15);}
+.cc-desc{font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:10px;}
+.cc-signals{font-family:var(--mono);font-size:9px;color:var(--muted);margin-bottom:10px;}
+.cc-signals span{color:var(--text);}
+.cc-btn{font-family:var(--mono);font-size:10px;font-weight:600;padding:10px;border-radius:3px;cursor:pointer;width:100%;text-align:center;letter-spacing:1px;transition:all .15s;border:1px solid;}
+.btn-amb{color:var(--red);border-color:var(--red);background:rgba(255,23,68,.08);}
+.btn-amb:hover{background:var(--red);color:#fff;}
+.btn-fire{color:#ff6d00;border-color:#ff6d00;background:rgba(255,109,0,.08);}
+.btn-fire:hover{background:#ff6d00;color:#fff;}
+.btn-vip{color:var(--amber);border-color:var(--amber);background:rgba(255,171,0,.08);}
+.btn-vip:hover{background:var(--amber);color:#000;}
+.btn-lk{color:var(--cyan);border-color:var(--cyan);background:rgba(0,229,255,.08);}
+.btn-lk:hover{background:var(--cyan);color:#000;}
+
+/* CORRIDOR VISUALISER */
+#corr-viz{padding:14px;}
+.cv-title{font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;}
+.cv-step{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.cv-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0;border:2px solid;}
+.cv-line{width:2px;height:20px;margin-left:6px;background:var(--border);}
+.cv-label{font-family:var(--mono);font-size:9px;color:var(--muted);}
+.cv-label span{color:var(--text);}
+
+/* HISTORY */
+.hist-item{padding:8px 14px;border-bottom:1px solid rgba(26,37,53,.7);}
+.hi-time{font-family:var(--mono);font-size:8px;color:var(--muted);}
+.hi-type{font-size:10px;font-weight:500;margin-top:2px;}
+.hi-detail{font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:2px;}
+</style>
+</head>
+<body>
+<div id="top">
+  <div class="logo">NEX<span>US</span> <span style="font-size:11px;color:var(--muted);font-family:var(--mono);letter-spacing:2px;font-weight:300">EMERGENCY RESPONSE</span></div>
+  <div style="font-family:var(--mono);font-size:10px;color:var(--cyan)" id="clk">--:--:--</div>
+</div>
+<div id="nav">
+  <a class="nav-btn" href="index.html">🖥 CONTROL ROOM</a>
+  <a class="nav-btn" href="map.html">🗺 CITY MAP</a>
+  <a class="nav-btn" href="signals.html">🚦 SIGNAL CONTROL</a>
+  <a class="nav-btn active" href="emergency.html">🚨 EMERGENCY</a>
+  <a class="nav-btn" href="analytics.html">📊 ANALYTICS</a>
+</div>
+
+<!-- ACTIVE EMERGENCY BANNER -->
+<div id="emg-banner">
+  <div style="display:flex;align-items:center;">
+    <div class="emg-pulse"></div>
+    <div class="emg-text" id="emg-banner-text">EMERGENCY ACTIVE</div>
+  </div>
+  <button class="emg-clear-btn" onclick="clearEmg()">✅ CLEAR EMERGENCY</button>
+</div>
+
+<div id="page">
+  <!-- CORRIDOR ACTIVATION -->
+  <div class="sec">
+    <div class="sec-hd">Corridor Activation <span class="badge br" id="emgStatus">STANDBY</span></div>
+
+    <div class="corr-card amb">
+      <div class="cc-header">
+        <div class="cc-icon">🚑</div>
+        <div><div class="cc-title" style="color:var(--red)">AMBULANCE CORRIDOR</div><div class="cc-sub">Medical emergency — green wave activation</div></div>
+      </div>
+      <div class="cc-body">
+        <div class="cc-desc">Clears all signals along Route 7B to green. Cross-traffic held on red. Estimated response time: <strong>8 minutes</strong>.</div>
+        <div class="cc-signals">Corridor: <span>SIG-A01 → SIG-A02 → SIG-C22 → SIG-C05</span></div>
+        <button class="cc-btn btn-amb" onclick="activate('ambulance')">🚑 ACTIVATE AMBULANCE CORRIDOR</button>
+      </div>
+    </div>
+
+    <div class="corr-card fire">
+      <div class="cc-header">
+        <div class="cc-icon">🚒</div>
+        <div><div class="cc-title" style="color:#ff6d00">FIRE ENGINE PRIORITY</div><div class="cc-sub">Fire emergency — eastern corridor</div></div>
+      </div>
+      <div class="cc-body">
+        <div class="cc-desc">Opens eastern corridor for fire engine access. Estimated response time: <strong>11 minutes</strong>.</div>
+        <div class="cc-signals">Corridor: <span>SIG-D03 → SIG-D11 → SIG-A14</span></div>
+        <button class="cc-btn btn-fire" onclick="activate('fire')">🚒 ACTIVATE FIRE CORRIDOR</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-hd">VIP &amp; Lockdown</div>
+
+    <div class="corr-card vip">
+      <div class="cc-header">
+        <div class="cc-icon">⭐</div>
+        <div><div class="cc-title" style="color:var(--amber)">VIP CONVOY ESCORT</div><div class="cc-sub">State / official convoy movement</div></div>
+      </div>
+      <div class="cc-body">
+        <div class="cc-desc">Synchronises all signals along VIP route for uninterrupted passage.</div>
+        <div class="cc-signals">Corridor: <span>SIG-B07 → SIG-B12 → SIG-E08 → SIG-F02</span></div>
+        <button class="cc-btn btn-vip" onclick="activate('vip')">⭐ ACTIVATE VIP ESCORT</button>
+      </div>
+    </div>
+
+    <div class="corr-card lk">
+      <div class="cc-header">
+        <div class="cc-icon">🔒</div>
+        <div><div class="cc-title" style="color:var(--cyan)">ZONE LOCKDOWN</div><div class="cc-sub">All 12 signals — RED HOLD</div></div>
+      </div>
+      <div class="cc-body">
+        <div class="cc-desc">Sets all 12 signal controllers to permanent RED. Use for major incidents, VIP security, or civil emergency.</div>
+        <div class="cc-signals">Affects: <span>All 12 intersections</span></div>
+        <button class="cc-btn btn-lk" onclick="activate('lockdown')">🔒 ACTIVATE FULL LOCKDOWN</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: VISUALISER + HISTORY -->
+  <div class="sec" style="display:flex;flex-direction:column;">
+    <div class="sec-hd">Corridor Visualiser</div>
+    <div id="corr-viz">
+      <div class="cv-title">No Active Corridor</div>
+      <div id="cv-steps" style="font-family:var(--mono);font-size:9px;color:var(--muted);line-height:2;">Select a corridor type to see the signal sequence.</div>
+    </div>
+    <div class="sec-hd">Incident History</div>
+    <div id="histList" style="flex:1;overflow-y:auto;"></div>
+  </div>
+</div>
+
+<script>
+const API='http://localhost:8000';
+const history=[];
+async function post(p,b){try{const r=await fetch(API+p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});return r.ok?await r.json():null;}catch{return null;}}
+async function get(p){try{const r=await fetch(API+p);return r.ok?await r.json():null;}catch{return null;}}
+
+async function activate(type){
+  const r=await post('/api/emergency/activate',{emergency_type:type,origin:'Control Room',notes:'Operator activated'});
+  if(!r){alert('Backend not reachable');return;}
+  history.unshift(r);
+  showBanner(r.message);
+  showViz(r);
+  renderHistory();
+  document.getElementById('emgStatus').textContent='ACTIVE';
+  document.getElementById('emgStatus').style.background='rgba(255,23,68,.2)';
+  document.getElementById('emgStatus').style.color='var(--red)';
+}
+
+async function clearEmg(){
+  const r=await post('/api/emergency/deactivate',{});
+  hideBanner();
+  document.getElementById('emgStatus').textContent='STANDBY';
+  document.getElementById('emgStatus').style.background='';
+  document.getElementById('emgStatus').style.color='';
+  document.getElementById('cv-steps').innerHTML='<span style="color:var(--green)">✔ Emergency cleared — all signals restored to adaptive control.</span>';
+  history.unshift({...r,emergency_type:'CLEARED',message:'Emergency cleared — adaptive control restored.'});
+  renderHistory();
+}
+
+function showBanner(msg){
+  const b=document.getElementById('emg-banner');
+  b.classList.add('active');
+  document.getElementById('emg-banner-text').textContent='⚠ EMERGENCY ACTIVE — '+msg;
+}
+function hideBanner(){document.getElementById('emg-banner').classList.remove('active');}
+
+function showViz(inc){
+  const cols={ambulance:'var(--red)',fire:'#ff6d00',vip:'var(--amber)',lockdown:'var(--cyan)'};
+  const col=cols[inc.emergency_type]||'var(--green)';
+  document.querySelector('.cv-title').textContent=inc.emergency_type?.toUpperCase()+' CORRIDOR';
+  const corridor=inc.corridor||[];
+  document.getElementById('cv-steps').innerHTML=corridor.map((sid,i)=>`
+    <div class="cv-step">
+      <div class="cv-dot" style="background:${col};border-color:${col};box-shadow:0 0 8px ${col}"></div>
+      <div class="cv-label"><span>${sid}</span> — GREEN (120s)</div>
+    </div>
+    ${i<corridor.length-1?`<div class="cv-line" style="background:${col}"></div>`:''}
+  `).join('');
+}
+
+function renderHistory(){
+  const typeIcon={ambulance:'🚑',fire:'🚒',vip:'⭐',lockdown:'🔒',CLEARED:'✅'};
+  document.getElementById('histList').innerHTML=history.map(h=>`
+    <div class="hist-item">
+      <div class="hi-time">${h.activated_at?.slice(0,19)||new Date().toISOString().slice(0,19)} UTC</div>
+      <div class="hi-type">${typeIcon[h.emergency_type]||'⚠'} ${h.emergency_type?.toUpperCase()}</div>
+      <div class="hi-detail">${h.message||''}</div>
+    </div>`).join('');
+}
+
+// Check active emergency on load
+async function checkActive(){
+  const r=await get('/api/emergency/active');
+  if(r&&r.status!=='none'){showBanner(r.message||'Emergency active');document.getElementById('emgStatus').textContent='ACTIVE';}
+}
+checkActive();
+setInterval(()=>document.getElementById('clk').textContent=new Date().toLocaleTimeString('en-IN',{hour12:false})+' IST',1000);
+</script>
+</body>
+</html>

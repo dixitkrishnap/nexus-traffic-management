@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>NEXUS — City Traffic Map</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{--bg:#060a10;--s1:#0b1018;--s2:#0f1620;--border:#1a2535;--green:#00e676;--amber:#ffab00;--red:#ff1744;--cyan:#00e5ff;--text:#cfd8e3;--muted:#546478;--mono:'IBM Plex Mono',monospace;--ui:'IBM Plex Sans',sans-serif;}
+html,body{height:100vh;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--ui);}
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.04) 3px,rgba(0,0,0,.04) 4px);pointer-events:none;z-index:9999;}
+#top{height:44px;background:var(--s1);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;flex-shrink:0;}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:5px;color:#fff;}
+.logo span{color:var(--green);}
+#nav{display:flex;background:var(--s2);border-bottom:1px solid var(--border);flex-shrink:0;}
+.nav-btn{padding:8px 18px;font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;text-decoration:none;display:flex;align-items:center;gap:6px;}
+.nav-btn:hover{color:var(--text);}
+.nav-btn.active{color:var(--green);border-bottom-color:var(--green);}
+#shell{display:flex;height:calc(100vh - 44px - 37px);}
+#sidebar{width:200px;background:var(--s1);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;}
+#sidebar::-webkit-scrollbar{width:3px;}
+#sidebar::-webkit-scrollbar-thumb{background:var(--border);}
+.sh{padding:8px 12px;font-family:var(--mono);font-size:8px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;background:var(--s2);border-bottom:1px solid var(--border);}
+.zi{display:flex;align-items:center;gap:6px;padding:6px 10px;border-bottom:1px solid rgba(26,37,53,.7);cursor:pointer;transition:background .12s;}
+.zi:hover{background:var(--s2);}
+.zid2{font-family:var(--mono);font-size:8px;color:var(--muted);width:22px;}
+.zname2{flex:1;font-size:9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.zdot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.legend{padding:10px;}
+.leg-title{font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;}
+.leg-scale{width:100%;height:12px;border-radius:2px;background:linear-gradient(90deg,#ff1744,#ff6d00,#ffab00,#c6ff00,#00e676);margin-bottom:4px;border:1px solid var(--border);}
+.leg-labels{display:flex;justify-content:space-between;font-family:var(--mono);font-size:8px;color:var(--muted);}
+.leg-note{font-family:var(--mono);font-size:8px;color:var(--muted);margin-top:8px;line-height:1.6;}
+.layer-btns{display:flex;flex-direction:column;gap:3px;padding:8px;}
+.lb2{font-family:var(--mono);font-size:8px;padding:4px 8px;background:var(--s2);border:1px solid var(--border);color:var(--muted);cursor:pointer;border-radius:2px;transition:all .15s;text-align:left;}
+.lb2:hover,.lb2.on{border-color:var(--green);color:var(--green);}
+#map-wrap{flex:1;position:relative;background:#08101a;}
+#mapCanvas{position:absolute;inset:0;width:100%;height:100%;}
+#map-info{position:absolute;bottom:10px;left:10px;background:rgba(6,10,16,.88);border:1px solid var(--border);padding:8px 12px;font-family:var(--mono);font-size:9px;color:var(--muted);border-radius:3px;line-height:1.8;pointer-events:none;}
+#map-info strong{color:var(--text);}
+</style>
+</head>
+<body>
+<div id="top">
+  <div class="logo">NEX<span>US</span> <span style="font-size:11px;color:var(--muted);font-family:var(--mono);letter-spacing:2px;font-weight:300">CITY MAP</span></div>
+  <div style="font-family:var(--mono);font-size:10px;color:var(--cyan)" id="clk">--:--:--</div>
+</div>
+<div id="nav">
+  <a class="nav-btn" href="index.html">🖥 CONTROL ROOM</a>
+  <a class="nav-btn active" href="map.html">🗺 CITY MAP</a>
+  <a class="nav-btn" href="signals.html">🚦 SIGNAL CONTROL</a>
+  <a class="nav-btn" href="emergency.html">🚨 EMERGENCY</a>
+  <a class="nav-btn" href="analytics.html">📊 ANALYTICS</a>
+</div>
+<div id="shell">
+  <div id="sidebar">
+    <div class="sh">Map Layers</div>
+    <div class="layer-btns">
+      <button class="lb2 on" onclick="setLayer('sim',this)">🚗 Simulation</button>
+      <button class="lb2" onclick="setLayer('heat',this)">🌡 Speed Heatmap</button>
+      <button class="lb2" onclick="setLayer('net',this)">🔗 Network Only</button>
+      <button class="lb2" onclick="setLayer('inc',this)">⚠ Incidents</button>
+    </div>
+    <div class="sh" style="margin-top:2px;">Speed Scale (m/s)</div>
+    <div class="legend">
+      <div class="leg-scale"></div>
+      <div class="leg-labels"><span>0</span><span>8</span><span>15</span><span>22+</span></div>
+      <div class="leg-note">Circle size = waiting time<br>Red = congested / stopped<br>Green = free flow</div>
+    </div>
+    <div class="sh">Zones</div>
+    <div id="zlist2"></div>
+  </div>
+  <div id="map-wrap">
+    <canvas id="mapCanvas"></canvas>
+    <div id="map-info">
+      <strong id="mi-veh">—</strong> vehicles &nbsp;|&nbsp;
+      Eff: <strong id="mi-eff">—</strong> &nbsp;|&nbsp;
+      Incidents: <strong id="mi-inc">—</strong>
+    </div>
+  </div>
+</div>
+<script>
+const API='http://localhost:8000';
+let zones={},sigs={},curLayer='sim',frame=0,emergency=null;
+
+async function get(p){try{const r=await fetch(API+p);return r.ok?await r.json():null;}catch{return null;}}
+function colFor(st){return st==='critical'?'#ff1744':st==='warning'?'#ffab00':'#00e676';}
+function spdCol(s){return s<=0?'#7b0000':s<4?'#ff1744':s<8?'#ff6d00':s<13?'#ffab00':s<18?'#c6ff00':'#00e676';}
+
+async function loadState(){
+  const [z,s,m]=await Promise.all([get('/api/traffic/zones'),get('/api/signals/'),get('/api/traffic/metrics')]);
+  if(z?.zones)z.zones.forEach(zn=>zones[zn.zone_id]=zn);
+  if(s?.signals)s.signals.forEach(sg=>sigs[sg.signal_id]=sg);
+  if(m){
+    document.getElementById('mi-veh').textContent=m.total_vehicles?.toLocaleString();
+    document.getElementById('mi-eff').textContent=m.flow_efficiency+'%';
+    document.getElementById('mi-inc').textContent=m.active_incidents;
+  }
+  renderSidebar();
+}
+function renderSidebar(){
+  document.getElementById('zlist2').innerHTML=Object.values(zones).sort((a,b)=>b.congestion-a.congestion).map(z=>`
+    <div class="zi"><div class="zid2">${z.zone_id}</div><div class="zname2">${z.name}</div><div class="zdot" style="background:${colFor(z.status)}"></div></div>
+  `).join('');
+}
+setInterval(loadState,5000);loadState();
+setInterval(()=>document.getElementById('clk').textContent=new Date().toLocaleTimeString('en-IN',{hour12:false})+' IST',1000);
+function setLayer(l,el){curLayer=l;document.querySelectorAll('.lb2').forEach(b=>b.classList.remove('on'));el.classList.add('on');}
+
+// ── CANVAS MAP ─────────────────────────────────────────────────────────────
+const cv=document.getElementById('mapCanvas');
+const cx=cv.getContext('2d',{alpha:false});
+function resize(){const w=cv.parentElement;cv.width=w.clientWidth*devicePixelRatio;cv.height=w.clientHeight*devicePixelRatio;cv.style.width=w.clientWidth+'px';cv.style.height=w.clientHeight+'px';}
+window.addEventListener('resize',resize);
+
+// City road network — curved paths using bezier curves
+// Each road: {x1,y1,cx1,cy1,cx2,cy2,x2,y2, zoneId, label}
+// coords are 0-1 normalized, mapped to canvas
+function mkRoad(x1,y1,cx1,cy1,cx2,cy2,x2,y2,zid,lbl=''){
+  return{x1,y1,cx1,cy1,cx2,cy2,x2,y2,zid,lbl};
+}
+
+const ROADS=[
+  // === HORIZONTAL ARTERIALS ===
+  // NH-48 (top, gentle S-curve)
+  mkRoad(.05,.12, .30,.10, .65,.14, .95,.11, 'Z9','NH-48'),
+  // Anna Salai (main diagonal sweep)
+  mkRoad(.05,.28, .28,.25, .55,.32, .92,.26, 'Z1','Anna Salai'),
+  // LB Road (middle, slight wave)
+  mkRoad(.05,.50, .25,.47, .60,.53, .92,.48, 'Z6','LB Road'),
+  // GST Road (bottom, curved)
+  mkRoad(.05,.72, .30,.70, .62,.74, .92,.70, 'Z4','GST Road'),
+  // Inner Ring Road (sweeping curve)
+  mkRoad(.08,.88, .35,.84, .65,.90, .90,.86, 'Z7','Inner Ring Rd'),
+
+  // === VERTICAL CONNECTORS ===
+  // Western corridor
+  mkRoad(.18,.05, .15,.28, .20,.55, .18,.95, 'Z12','Western Corridor'),
+  // Central spine (slight bow)
+  mkRoad(.42,.05, .38,.30, .45,.60, .42,.95, 'Z3','Central Spine'),
+  // Eastern corridor
+  mkRoad(.72,.05, .68,.30, .75,.58, .72,.95, 'Z2','Eastern Corridor'),
+  // Far east
+  mkRoad(.88,.05, .85,.28, .90,.58, .88,.95, 'Z8','Far Eastern'),
+
+  // === DIAGONAL CONNECTORS ===
+  mkRoad(.18,.28, .28,.35, .35,.42, .42,.50, 'Z10','Diagonal NW'),
+  mkRoad(.42,.50, .52,.42, .62,.35, .72,.28, 'Z11','Diagonal NE'),
+  mkRoad(.18,.50, .28,.58, .35,.65, .42,.72, 'Z5','SW Connector'),
+  mkRoad(.72,.50, .62,.60, .55,.68, .42,.72, 'Z7','SE Connector'),
+  mkRoad(.42,.72, .55,.65, .65,.75, .88,.70, 'Z4','South Link'),
+];
+
+// Intersections
+const IXNS=[
+  {nx:.18,ny:.28,sid:'SIG-A01',zid:'Z1'},{nx:.42,ny:.28,sid:'SIG-A02',zid:'Z1'},
+  {nx:.72,ny:.28,sid:'SIG-A14',zid:'Z3'},{nx:.18,ny:.50,sid:'SIG-B07',zid:'Z2'},
+  {nx:.42,ny:.50,sid:'SIG-B12',zid:'Z11'},{nx:.72,ny:.50,sid:'SIG-C22',zid:'Z6'},
+  {nx:.88,ny:.50,sid:'SIG-C05',zid:'Z4'},{nx:.18,ny:.72,sid:'SIG-D03',zid:'Z9'},
+  {nx:.42,ny:.72,sid:'SIG-D11',zid:'Z7'},{nx:.72,ny:.72,sid:'SIG-E08',zid:'Z8'},
+  {nx:.42,ny:.12,sid:'SIG-E14',zid:'Z5'},{nx:.72,ny:.12,sid:'SIG-F02',zid:'Z10'},
+];
+
+// Vehicles
+const VEHS=[];
+(function spawnV(){
+  for(let i=0;i<90;i++){
+    const r=ROADS[Math.floor(Math.random()*ROADS.length)];
+    VEHS.push({r,t:Math.random(),spd:.0006+Math.random()*.002,dir:Math.random()>.5?1:-1});
+  }
+})();
+
+function bezierPoint(r,t){
+  const mt=1-t;
+  return{
+    x:mt*mt*mt*r.x1+3*mt*mt*t*r.cx1+3*mt*t*t*r.cx2+t*t*t*r.x2,
+    y:mt*mt*mt*r.y1+3*mt*mt*t*r.cy1+3*mt*t*t*r.cy2+t*t*t*r.y2
+  };
+}
+
+function zoneCong(zid){return zones[zid]?.congestion||.4;}
+function roadCong(r){return zoneCong(r.zid);}
+function flowCol(c){return c<.4?`rgba(0,230,118,${.5+c*.5})`:c<.65?'rgba(255,171,0,.8)':`rgba(255,23,68,${.75+c*.2})`;}
+
+let rafId;
+function draw(){
+  const W=cv.width,H=cv.height,dpr=devicePixelRatio;
+  if(!W||!H){rafId=requestAnimationFrame(draw);return;}
+
+  // Background — dark asphalt with subtle grid
+  cx.fillStyle='#08101a';cx.fillRect(0,0,W,H);
+  cx.strokeStyle='rgba(26,37,53,.3)';cx.lineWidth=1;
+  for(let x=0;x<W;x+=35*dpr){cx.beginPath();cx.moveTo(x,0);cx.lineTo(x,H);cx.stroke();}
+  for(let y=0;y<H;y+=35*dpr){cx.beginPath();cx.moveTo(0,y);cx.lineTo(W,y);cx.stroke();}
+
+  const rw=Math.min(W,H)*.022;
+
+  // Draw roads as bezier curves
+  ROADS.forEach(r=>{
+    const c=roadCong(r)+Math.sin(frame*.03)*.03;
+
+    if(curLayer==='heat'){
+      // Wide colored halo
+      cx.strokeStyle=flowCol(c);cx.lineWidth=rw*2.5;cx.lineCap='round';cx.globalAlpha=.6;
+      cx.beginPath();cx.moveTo(r.x1*W,r.y1*H);cx.bezierCurveTo(r.cx1*W,r.cy1*H,r.cx2*W,r.cy2*H,r.x2*W,r.y2*H);cx.stroke();cx.globalAlpha=1;
+    }
+
+    // Road body (dark grey asphalt)
+    cx.strokeStyle='#1c2a3a';cx.lineWidth=rw*2.4;cx.lineCap='round';
+    cx.beginPath();cx.moveTo(r.x1*W,r.y1*H);cx.bezierCurveTo(r.cx1*W,r.cy1*H,r.cx2*W,r.cy2*H,r.x2*W,r.y2*H);cx.stroke();
+
+    // Road surface
+    cx.strokeStyle='#253040';cx.lineWidth=rw*2;
+    cx.beginPath();cx.moveTo(r.x1*W,r.y1*H);cx.bezierCurveTo(r.cx1*W,r.cy1*H,r.cx2*W,r.cy2*H,r.x2*W,r.y2*H);cx.stroke();
+
+    // Center line (dashed) — simulate with dotted stroke
+    cx.strokeStyle='rgba(255,255,255,.12)';cx.lineWidth=1*dpr;cx.setLineDash([8*dpr,12*dpr]);
+    cx.beginPath();cx.moveTo(r.x1*W,r.y1*H);cx.bezierCurveTo(r.cx1*W,r.cy1*H,r.cx2*W,r.cy2*H,r.x2*W,r.y2*H);cx.stroke();cx.setLineDash([]);
+
+    // Congestion glow
+    cx.strokeStyle=flowCol(c);cx.lineWidth=rw*.7;
+    cx.shadowBlur=c>.65?10*dpr:4*dpr;cx.shadowColor=flowCol(c);
+    cx.beginPath();cx.moveTo(r.x1*W,r.y1*H);cx.bezierCurveTo(r.cx1*W,r.cy1*H,r.cx2*W,r.cy2*H,r.x2*W,r.y2*H);cx.stroke();cx.shadowBlur=0;
+
+    // Road label
+    if(curLayer==='net'&&r.lbl){
+      const mid=bezierPoint(r,.5);
+      cx.font=`${7*dpr}px IBM Plex Mono`;cx.fillStyle='rgba(84,100,120,.8)';
+      cx.textAlign='center';cx.textBaseline='middle';
+      cx.fillText(r.lbl,mid.x*W,mid.y*H-6*dpr);
+    }
+  });
+
+  // Intersections
+  IXNS.forEach(ix=>{
+    const sig=sigs[ix.sid];
+    const sigCol=sig?(sig.phase==='G'?'#00e676':sig.phase==='Y'?'#ffab00':'#ff1744'):'#546478';
+    const z=zones[ix.zid];const cong=z?.congestion||.4;
+
+    // Junction box
+    cx.fillStyle='#101820';
+    cx.beginPath();cx.arc(ix.nx*W,ix.ny*H,rw*.9,0,Math.PI*2);cx.fill();
+
+    // Signal ring
+    cx.strokeStyle=sigCol;cx.lineWidth=2*dpr;
+    cx.shadowBlur=10*dpr;cx.shadowColor=sigCol;
+    cx.beginPath();cx.arc(ix.nx*W,ix.ny*H,rw*.85,0,Math.PI*2);cx.stroke();cx.shadowBlur=0;
+
+    // Signal dots at 4 corners
+    [[-.6,-.6],[.6,-.6],[-.6,.6],[.6,.6]].forEach(([dx,dy])=>{
+      cx.fillStyle=sigCol;cx.shadowBlur=6*dpr;cx.shadowColor=sigCol;
+      cx.beginPath();cx.arc(ix.nx*W+dx*rw,ix.ny*H+dy*rw,2.5*dpr,0,Math.PI*2);cx.fill();cx.shadowBlur=0;
+    });
+
+    // Zone label
+    cx.font=`${7*dpr}px IBM Plex Mono`;cx.fillStyle='rgba(84,100,120,.9)';
+    cx.textAlign='center';cx.textBaseline='middle';cx.fillText(ix.zid,ix.nx*W,ix.ny*H);
+  });
+
+  // Vehicles
+  if(curLayer==='sim'||curLayer==='heat'){
+    VEHS.forEach(v=>{
+      const z=zones[v.r.zid];
+      const cong=z?.congestion||.4;
+      const spd=z?z.speed_ms*(0.8+Math.random()*.4):10;
+      const wt=z?z.wait_time_s:5;
+      v.t+=v.spd*(1-cong)*v.dir;
+      if(v.t>1||v.t<0){v.dir*=-1;v.t=Math.max(0,Math.min(1,v.t));}
+      const pos=bezierPoint(v.r,v.t);
+      const vx=pos.x*W,vy=pos.y*H;
+      const baseR=3.5*dpr,rad=baseR+(wt/50)*baseR*2.2;
+      const col=spdCol(spd);
+      if(wt>10){cx.fillStyle=col+'20';cx.beginPath();cx.arc(vx,vy,rad*2.2,0,Math.PI*2);cx.fill();}
+      cx.fillStyle=col+'cc';cx.strokeStyle=col;cx.lineWidth=1*dpr;
+      cx.beginPath();cx.arc(vx,vy,rad,0,Math.PI*2);cx.fill();cx.stroke();
+      if(wt>12||spd<3){cx.font=`${5*dpr}px IBM Plex Mono`;cx.fillStyle='rgba(255,255,255,.8)';cx.textAlign='center';cx.textBaseline='middle';cx.fillText(spd.toFixed(0),vx,vy);}
+    });
+  }
+
+  // Incident triangles
+  if(curLayer==='inc'){
+    const incPts=[[.35,.28],[.18,.50],[.72,.12]];
+    incPts.forEach((p,i)=>{
+      if(i===0&&frame%20<10)return;
+      const col=i===0?'#ff1744':'#ffab00';const r=13*dpr;
+      cx.fillStyle=col+'30';cx.strokeStyle=col;cx.lineWidth=2*dpr;
+      cx.beginPath();cx.moveTo(p[0]*W,p[1]*H-r);cx.lineTo(p[0]*W+r*.866,p[1]*H+r*.5);cx.lineTo(p[0]*W-r*.866,p[1]*H+r*.5);cx.closePath();cx.fill();cx.stroke();
+      cx.fillStyle='#fff';cx.font=`bold ${9*dpr}px IBM Plex Mono`;cx.textAlign='center';cx.textBaseline='middle';cx.fillText('!',p[0]*W,p[1]*H+1*dpr);
+    });
+  }
+
+  if(emergency){cx.fillStyle='rgba(255,23,68,.05)';cx.fillRect(0,0,W,H);cx.font=`bold ${9*dpr}px IBM Plex Mono`;cx.fillStyle='rgba(255,23,68,.6)';cx.textAlign='left';cx.textBaseline='top';cx.fillText('⚠ EMERGENCY ACTIVE: '+emergency,8*dpr,8*dpr);}
+
+  frame++;rafId=requestAnimationFrame(draw);
+}
+
+setTimeout(()=>{resize();draw();},80);
+</script>
+</body>
+</html>

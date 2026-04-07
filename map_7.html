@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NEXUS — Intersection Map</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{--bg:#07090d;--p1:#0c1118;--p2:#111820;--border:#1e2d3d;
+  --green:#00e676;--amber:#ffab00;--red:#f44336;--cyan:#00e5ff;
+  --text:#d0dbe8;--muted:#546e8a;--mono:'IBM Plex Mono',monospace;}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;}
+#topbar{height:50px;background:var(--p1);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;flex-shrink:0;}
+.brand{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:5px;color:#fff;}
+.brand em{color:var(--green);font-style:normal;}
+.nav{display:flex;gap:0;}
+.nav a{padding:0 18px;height:50px;display:flex;align-items:center;font-family:var(--mono);font-size:9px;letter-spacing:1.5px;color:var(--muted);text-decoration:none;border-bottom:2px solid transparent;transition:all .15s;}
+.nav a:hover{color:var(--text);}
+.nav a.on{color:var(--green);border-bottom-color:var(--green);}
+#clk{font-family:var(--mono);font-size:12px;color:var(--cyan);}
+#shell{display:flex;height:calc(100vh - 50px);}
+#sidebar{width:220px;background:var(--p1);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;}
+#sidebar::-webkit-scrollbar{width:3px;}
+#sidebar::-webkit-scrollbar-thumb{background:var(--border);}
+.sh{padding:8px 12px;font-family:var(--mono);font-size:8px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;background:var(--p2);border-bottom:1px solid var(--border);flex-shrink:0;}
+.layer-group{padding:8px;}
+.lb{display:flex;align-items:center;gap:7px;padding:5px 6px;font-family:var(--mono);font-size:9px;color:var(--muted);cursor:pointer;border-radius:2px;transition:background .12s;margin-bottom:2px;}
+.lb:hover{background:rgba(255,255,255,.04);}
+.lb input[type=checkbox]{accent-color:var(--green);cursor:pointer;}
+.lb.on{color:var(--text);}
+.legend{padding:10px 12px;}
+.leg-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-family:var(--mono);font-size:8px;color:var(--muted);}
+.leg-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;}
+.leg-sq{width:14px;height:8px;border-radius:1px;flex-shrink:0;}
+.zi-wrap{overflow-y:auto;flex:1;}
+.zi{display:flex;align-items:center;gap:6px;padding:6px 12px;border-bottom:1px solid rgba(30,45,61,.6);cursor:pointer;transition:background .1s;}
+.zi:hover{background:var(--p2);}
+.zi-id{font-family:var(--mono);font-size:8px;color:var(--muted);width:24px;}
+.zi-name{flex:1;font-size:9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.zi-pct{font-family:var(--mono);font-size:9px;font-weight:600;width:32px;text-align:right;}
+.zi-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+/* Signal list in sidebar */
+.sig-li{padding:5px 12px;border-bottom:1px solid rgba(30,45,61,.5);display:flex;align-items:center;gap:7px;}
+.sli-id{font-family:var(--mono);font-size:8px;color:var(--muted);width:52px;}
+.sli-phase{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.sli-name{font-size:9px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.sli-t{font-family:var(--mono);font-size:8px;color:var(--muted);}
+/* Map */
+#map-wrap{flex:1;position:relative;overflow:hidden;background:#0d1520;}
+#mapCanvas{position:absolute;inset:0;width:100%;height:100%;}
+/* Tooltip */
+#tooltip{position:absolute;display:none;background:rgba(7,9,13,.95);border:1px solid var(--border);border-radius:3px;padding:8px 12px;font-family:var(--mono);font-size:9px;line-height:1.8;pointer-events:none;z-index:10;color:var(--text);min-width:160px;}
+#tooltip .tt-hd{font-size:8px;letter-spacing:1.5px;color:var(--green);margin-bottom:4px;}
+/* Info overlay */
+#info-overlay{position:absolute;bottom:10px;right:10px;background:rgba(7,9,13,.88);border:1px solid var(--border);border-radius:3px;padding:8px 12px;font-family:var(--mono);font-size:9px;line-height:1.8;color:var(--muted);}
+#info-overlay strong{color:var(--text);}
+</style>
+</head>
+<body>
+<div id="topbar">
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div class="brand">NEX<em>US</em></div>
+    <span style="font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--muted)">INTERSECTION MAP</span>
+  </div>
+  <div class="nav">
+    <a href="/static/index.html">🖥 CONTROL ROOM</a>
+    <a href="/static/map.html" class="on">🗺 INTERSECTION MAP</a>
+    <a href="/static/analytics.html">📊 ANALYTICS</a>
+  </div>
+  <div id="clk" style="font-family:var(--mono);font-size:12px;color:var(--cyan);">--:--:--</div>
+</div>
+
+<div id="shell">
+  <div id="sidebar">
+    <div class="sh">Display Layers</div>
+    <div class="layer-group">
+      <label class="lb on"><input type="checkbox" id="lyr-zones" checked onchange="redraw()"> Zone Congestion Heat</label>
+      <label class="lb on"><input type="checkbox" id="lyr-signals" checked onchange="redraw()"> Signal States</label>
+      <label class="lb on"><input type="checkbox" id="lyr-labels" checked onchange="redraw()"> Zone Labels</label>
+      <label class="lb on"><input type="checkbox" id="lyr-roads" checked onchange="redraw()"> Road Network</label>
+    </div>
+
+    <div class="sh">Legend</div>
+    <div class="legend">
+      <div style="font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:1px;margin-bottom:6px;">SIGNAL PHASE</div>
+      <div class="leg-row"><div class="leg-dot" style="background:var(--green);box-shadow:0 0 6px var(--green)"></div>GREEN — vehicles moving</div>
+      <div class="leg-row"><div class="leg-dot" style="background:var(--amber);box-shadow:0 0 6px var(--amber)"></div>YELLOW — transition</div>
+      <div class="leg-row"><div class="leg-dot" style="background:var(--red);box-shadow:0 0 6px var(--red)"></div>RED — stopped</div>
+      <div style="font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:1px;margin:8px 0 6px;">ZONE OCCUPANCY</div>
+      <div class="leg-row"><div class="leg-sq" style="background:rgba(0,230,118,.4)"></div>0–54% normal</div>
+      <div class="leg-row"><div class="leg-sq" style="background:rgba(255,171,0,.4)"></div>55–74% warning</div>
+      <div class="leg-row"><div class="leg-sq" style="background:rgba(244,67,54,.4)"></div>75%+ critical</div>
+      <div style="font-family:var(--mono);font-size:8px;color:var(--muted);margin-top:8px;line-height:1.7;">
+        Hover over any<br>intersection for<br>live signal data.
+      </div>
+    </div>
+
+    <div class="sh">Signal Status</div>
+    <div id="sig-list"></div>
+
+    <div class="sh">Zone Occupancy</div>
+    <div class="zi-wrap" id="zone-list"></div>
+  </div>
+
+  <div id="map-wrap">
+    <canvas id="mapCanvas"></canvas>
+    <div id="tooltip"><div class="tt-hd" id="tt-hd">—</div><div id="tt-body"></div></div>
+    <div id="info-overlay">
+      Zones: <strong id="io-inc">—</strong> critical &nbsp;|&nbsp;
+      Signals: <strong id="io-sig">—</strong>/12 adaptive &nbsp;|&nbsp;
+      Eff: <strong id="io-eff">—</strong>
+    </div>
+  </div>
+</div>
+
+<script>
+const API='http://localhost:8000';
+let zones={},sigs={},frame=0,hovIx=null;
+
+async function get(p){try{const r=await fetch(API+p);return r.ok?r.json():null;}catch{return null;}}
+
+// ── ROAD NETWORK ─────────────────────────────────────────────────────────────
+// A stylised top-down satellite-feel map of 12 Chennai intersections.
+// Coordinates are normalized 0-1, mapped to canvas at draw time.
+// Roads are bezier curves. Intersections are detailed junction boxes.
+
+const ZONES_DEF=[
+  {id:'Z1', name:'Anna Salai',      nx:.25,ny:.28, base:.55},
+  {id:'Z2', name:'OMR Tech Park',   nx:.75,ny:.22, base:.40},
+  {id:'Z3', name:'T.Nagar',         nx:.42,ny:.38, base:.75},
+  {id:'Z4', name:'Airport Expwy',   nx:.12,ny:.65, base:.25},
+  {id:'Z5', name:'Tambaram',        nx:.22,ny:.78, base:.60},
+  {id:'Z6', name:'Adyar Bridge',    nx:.58,ny:.52, base:.35},
+  {id:'Z7', name:'Guindy',          nx:.35,ny:.55, base:.50},
+  {id:'Z8', name:'Velachery',       nx:.55,ny:.68, base:.65},
+  {id:'Z9', name:'Koyambedu',       nx:.18,ny:.42, base:.70},
+  {id:'Z10',name:'Porur',           nx:.10,ny:.52, base:.45},
+  {id:'Z11',name:'Sholinganallur',  nx:.72,ny:.58, base:.55},
+  {id:'Z12',name:'Chromepet',       nx:.38,ny:.72, base:.30},
+];
+
+const SIG_MAP={
+  'SIG-A01':'Z1','SIG-A02':'Z1','SIG-A14':'Z3','SIG-B07':'Z2','SIG-B12':'Z11',
+  'SIG-C22':'Z6','SIG-C05':'Z4','SIG-D03':'Z9','SIG-D11':'Z7','SIG-E08':'Z8',
+  'SIG-E14':'Z5','SIG-F02':'Z10'
+};
+const SIG_DEFS=[
+  {id:'SIG-A01',nx:.25,ny:.28},{id:'SIG-A02',nx:.42,ny:.38},{id:'SIG-A14',nx:.58,ny:.52},
+  {id:'SIG-B07',nx:.75,ny:.22},{id:'SIG-B12',nx:.72,ny:.58},{id:'SIG-C22',nx:.58,ny:.38},
+  {id:'SIG-C05',nx:.12,ny:.65},{id:'SIG-D03',nx:.18,ny:.42},{id:'SIG-D11',nx:.35,ny:.55},
+  {id:'SIG-E08',nx:.55,ny:.68},{id:'SIG-E14',nx:.22,ny:.78},{id:'SIG-F02',nx:.10,ny:.52},
+];
+
+// Road segments as bezier: [x1,y1,cx1,cy1,cx2,cy2,x2,y2,zid]
+const ROADS=[
+  // Main arterials
+  [.05,.28,.18,.26,.30,.28,.58,.38,'Z1'],   // Anna Salai corridor
+  [.58,.38,.65,.30,.72,.28,.92,.22,'Z2'],   // OMR extension
+  [.05,.42,.15,.42,.22,.42,.55,.52,'Z9'],   // Koyambedu link
+  [.05,.65,.10,.65,.12,.65,.38,.72,'Z4'],   // Airport link
+  [.38,.72,.45,.70,.52,.68,.92,.65,'Z5'],   // Tambaram link
+  [.35,.55,.45,.55,.50,.55,.92,.58,'Z6'],   // Adyar-Sholinganallur
+  [.55,.38,.58,.45,.58,.52,.58,.68,'Z11'],  // OMR spine
+  [.10,.52,.16,.52,.18,.52,.35,.55,'Z10'],  // Porur-Guindy
+  [.25,.28,.28,.35,.32,.42,.35,.55,'Z7'],   // Anna-Guindy connector
+  [.18,.42,.20,.50,.20,.58,.22,.78,'Z12'],  // Chromepet connector
+  [.42,.38,.48,.45,.52,.50,.55,.52,'Z6'],   // T.Nagar-Adyar
+  [.35,.55,.36,.62,.37,.68,.38,.72,'Z12'],  // Guindy-Chromepet
+];
+
+// ── CANVAS ──────────────────────────────────────────────────────────────────
+const cv=document.getElementById('mapCanvas');
+const cx=cv.getContext('2d',{alpha:false});
+
+function resize(){
+  const w=cv.parentElement;
+  cv.width=w.clientWidth*devicePixelRatio;
+  cv.height=w.clientHeight*devicePixelRatio;
+  cv.style.width=w.clientWidth+'px';
+  cv.style.height=w.clientHeight+'px';
+}
+window.addEventListener('resize',()=>{resize();});
+
+function lyr(id){return document.getElementById(id)?.checked;}
+
+function congColor(c){
+  if(c>=.75)return`rgba(244,67,54,${.3+c*.3})`;
+  if(c>=.55)return`rgba(255,171,0,${.25+c*.3})`;
+  return`rgba(0,230,118,${.2+c*.3})`;
+}
+function sigColor(s){
+  if(!s)return'#546e8a';
+  return s.phase==='G'?'#00e676':s.phase==='Y'?'#ffab00':'#f44336';
+}
+
+function drawSatelliteBase(W,H){
+  // Dark ground
+  cx.fillStyle='#0d1520';cx.fillRect(0,0,W,H);
+  // Subtle block pattern (satellite texture)
+  const dpr=devicePixelRatio;
+  // City blocks — irregular rectangles
+  const blocks=[
+    [.08,.15,.18,.22],[.28,.15,.40,.25],[.50,.12,.70,.20],[.74,.12,.90,.18],
+    [.08,.30,.22,.40],[.28,.25,.40,.35],[.44,.25,.58,.35],[.62,.25,.72,.35],
+    [.08,.48,.18,.62],[.22,.48,.34,.58],[.38,.42,.50,.52],[.60,.42,.70,.52],
+    [.74,.38,.88,.48],[.06,.68,.20,.76],[.24,.62,.34,.72],[.40,.60,.54,.68],
+    [.58,.60,.70,.68],[.74,.58,.90,.68],[.22,.80,.36,.90],[.40,.76,.56,.88],
+    [.60,.74,.75,.82],[.78,.72,.92,.80],
+  ];
+  blocks.forEach(([x1,y1,x2,y2])=>{
+    cx.fillStyle=`rgba(${12+Math.random()*8},${20+Math.random()*8},${30+Math.random()*8},1)`;
+    cx.fillRect(x1*W,y1*H,(x2-x1)*W,(y2-y1)*H);
+    // Building highlights
+    cx.fillStyle='rgba(255,255,255,.015)';
+    cx.fillRect(x1*W+2,(y1)*H+2,(x2-x1)*W*.4,(y2-y1)*H*.4);
+  });
+  // Green patches (parks)
+  [[.60,.28,.10,.08],[.34,.62,.08,.05],[.80,.30,.06,.04]].forEach(([x,y,w,h])=>{
+    cx.fillStyle='rgba(0,80,30,.4)';cx.fillRect(x*W,y*H,w*W,h*H);
+  });
+  // Water body (river)
+  cx.strokeStyle='rgba(0,80,140,.5)';cx.lineWidth=5*dpr;cx.lineCap='round';
+  cx.beginPath();cx.moveTo(.85*W,.40*H);cx.bezierCurveTo(.80*W,.55*H,.75*W,.65*H,.70*W,.80*H);cx.stroke();
+}
+
+function drawRoads(W,H){
+  if(!lyr('lyr-roads'))return;
+  const dpr=devicePixelRatio;
+  ROADS.forEach(r=>{
+    const zid=r[8];const z=zones[zid];const c=z?.congestion||.4;
+    // Road body
+    cx.strokeStyle='#2a3d4e';cx.lineWidth=7*dpr;cx.lineCap='round';
+    cx.beginPath();cx.moveTo(r[0]*W,r[1]*H);cx.bezierCurveTo(r[2]*W,r[3]*H,r[4]*W,r[5]*H,r[6]*W,r[7]*H);cx.stroke();
+    cx.strokeStyle='#1e2d3a';cx.lineWidth=5*dpr;
+    cx.beginPath();cx.moveTo(r[0]*W,r[1]*H);cx.bezierCurveTo(r[2]*W,r[3]*H,r[4]*W,r[5]*H,r[6]*W,r[7]*H);cx.stroke();
+    // Lane markings
+    cx.strokeStyle='rgba(255,255,255,.08)';cx.lineWidth=1*dpr;cx.setLineDash([6*dpr,10*dpr]);
+    cx.beginPath();cx.moveTo(r[0]*W,r[1]*H);cx.bezierCurveTo(r[2]*W,r[3]*H,r[4]*W,r[5]*H,r[6]*W,r[7]*H);cx.stroke();cx.setLineDash([]);
+  });
+}
+
+function drawZoneHeat(W,H){
+  if(!lyr('lyr-zones'))return;
+  ZONES_DEF.forEach(d=>{
+    const z=zones[d.id];const c=z?.congestion||d.base;
+    const col=congColor(c);
+    const rad=Math.min(W,H)*.09;
+    const grd=cx.createRadialGradient(d.nx*W,d.ny*H,0,d.nx*W,d.ny*H,rad);
+    grd.addColorStop(0,col);grd.addColorStop(1,'transparent');
+    cx.fillStyle=grd;cx.beginPath();cx.arc(d.nx*W,d.ny*H,rad,0,Math.PI*2);cx.fill();
+  });
+}
+
+function drawIntersections(W,H){
+  const dpr=devicePixelRatio;
+  SIG_DEFS.forEach((ix,i)=>{
+    const s=sigs[ix.id];
+    const sc=sigColor(s);
+    const x=ix.nx*W,y=ix.ny*H;
+    const sz=10*dpr;
+
+    // Junction box (satellite-style: dark square with markings)
+    cx.fillStyle='#1a2a3a';cx.fillRect(x-sz,y-sz,sz*2,sz*2);
+    cx.strokeStyle='#2d4055';cx.lineWidth=1*dpr;cx.strokeRect(x-sz,y-sz,sz*2,sz*2);
+
+    // Crosswalk lines on all 4 sides
+    cx.fillStyle='rgba(255,255,255,.12)';
+    for(let j=0;j<4;j++){
+      cx.fillRect(x-sz+j*(sz*.5),y-sz,sz*.3,sz*.4);
+      cx.fillRect(x-sz+j*(sz*.5),y+sz*.6,sz*.3,sz*.4);
+      cx.fillRect(x-sz,y-sz+j*(sz*.5),sz*.4,sz*.3);
+      cx.fillRect(x+sz*.6,y-sz+j*(sz*.5),sz*.4,sz*.3);
+    }
+
+    // Signal indicator — glowing dot at center
+    cx.fillStyle=sc;
+    cx.shadowBlur=hovIx===i?16*dpr:8*dpr;
+    cx.shadowColor=sc;
+    cx.beginPath();cx.arc(x,y,hovIx===i?4.5*dpr:3.5*dpr,0,Math.PI*2);cx.fill();
+    cx.shadowBlur=0;
+
+    // 4 corner signal posts
+    [[-.7,-.7],[.7,-.7],[-.7,.7],[.7,.7]].forEach(([dx,dy])=>{
+      cx.fillStyle=sc;cx.shadowBlur=5*dpr;cx.shadowColor=sc;
+      cx.beginPath();cx.arc(x+dx*sz,y+dy*sz,2*dpr,0,Math.PI*2);cx.fill();cx.shadowBlur=0;
+    });
+
+    // Signal phase ring
+    cx.strokeStyle=sc;cx.lineWidth=1.5*dpr;
+    cx.shadowBlur=hovIx===i?12*dpr:5*dpr;cx.shadowColor=sc;
+    cx.beginPath();cx.arc(x,y,sz*.8,0,Math.PI*2);cx.stroke();cx.shadowBlur=0;
+
+    // Hover highlight
+    if(hovIx===i){
+      cx.strokeStyle=sc;cx.lineWidth=1*dpr;cx.globalAlpha=.3;
+      cx.beginPath();cx.arc(x,y,sz*1.6,0,Math.PI*2);cx.stroke();cx.globalAlpha=1;
+    }
+  });
+}
+
+function drawLabels(W,H){
+  if(!lyr('lyr-labels'))return;
+  const dpr=devicePixelRatio;
+  ZONES_DEF.forEach(d=>{
+    const z=zones[d.id];const c=z?.congestion||d.base;
+    const col=c>=.75?'var(--red)':c>=.55?'var(--amber)':'var(--green)';
+    const pct=Math.round(c*100);
+    cx.font=`bold ${8*dpr}px IBM Plex Mono`;cx.textAlign='center';cx.textBaseline='bottom';
+    // Background pill
+    const txt=`${d.id} ${pct}%`;
+    const tw=cx.measureText(txt).width;
+    cx.fillStyle='rgba(7,9,13,.8)';
+    cx.fillRect(d.nx*W-tw/2-4,d.ny*H-14*dpr-4,tw+8,12*dpr+4);
+    cx.fillStyle=c>=.75?'#f44336':c>=.55?'#ffab00':'#00e676';
+    cx.fillText(txt,d.nx*W,d.ny*H-14*dpr);
+  });
+}
+
+function redraw(){
+  const W=cv.width,H=cv.height;
+  if(!W||!H)return;
+  drawSatelliteBase(W,H);
+  drawRoads(W,H);
+  drawZoneHeat(W,H);
+  drawIntersections(W,H);
+  drawLabels(W,H);
+  frame++;
+}
+
+// ── HOVER / TOOLTIP ──────────────────────────────────────────────────────────
+const tt=document.getElementById('tooltip');
+cv.addEventListener('mousemove',e=>{
+  const rect=cv.getBoundingClientRect();
+  const mx=(e.clientX-rect.left)/rect.width;
+  const my=(e.clientY-rect.top)/rect.height;
+  const dpr=devicePixelRatio;
+  const sz=10*dpr/cv.width;
+  let found=null;
+  SIG_DEFS.forEach((ix,i)=>{
+    const dx=Math.abs(ix.nx-mx),dy=Math.abs(ix.ny-my);
+    if(dx<.04&&dy<.04)found=i;
+  });
+  hovIx=found;
+  if(found!==null){
+    const ix=SIG_DEFS[found];
+    const s=sigs[ix.id];
+    const zid=SIG_MAP[ix.id];const z=zones[zid];
+    document.getElementById('tt-hd').textContent=ix.id;
+    const col=s?(s.phase==='G'?'#00e676':s.phase==='Y'?'#ffab00':'#f44336'):'#546e8a';
+    document.getElementById('tt-body').innerHTML=
+      `<span style="color:${col}">Phase: ${s?.phase||'—'} &nbsp; Green: ${s?.green_s||'—'}s</span><br>`+
+      `Zone: ${zid} — ${z?.name||''}<br>`+
+      `Congestion: ${Math.round((z?.congestion||0)*100)}% &nbsp; Status: ${z?.status||'—'}<br>`+
+      `Speed: ${z?.speed_ms||'—'} m/s &nbsp; Wait: ${z?.wait_time_s||'—'}s<br>`+
+      `Mode: ${s?.adaptive?'ADAPTIVE (LLM)':'MANUAL'}`;
+    tt.style.display='block';
+    tt.style.left=Math.min(e.clientX-rect.left+14,rect.width-180)+'px';
+    tt.style.top=Math.max(e.clientY-rect.top-80,8)+'px';
+  } else {
+    tt.style.display='none';
+  }
+  redraw();
+});
+cv.addEventListener('mouseleave',()=>{hovIx=null;tt.style.display='none';redraw();});
+
+// ── SIDEBAR RENDERS ──────────────────────────────────────────────────────────
+function renderSidebar(){
+  // Signal list
+  document.getElementById('sig-list').innerHTML=Object.values(sigs).map(s=>{
+    const col=s.phase==='G'?'var(--green)':s.phase==='Y'?'var(--amber)':'var(--red)';
+    return `<div class="sig-li">
+      <div class="sli-id">${s.signal_id.replace('SIG-','')}</div>
+      <div class="sli-phase" style="background:${col};box-shadow:0 0 5px ${col}"></div>
+      <div class="sli-name">${s.intersection}</div>
+      <div class="sli-t" style="color:${col}">${s.green_s}s</div>
+    </div>`;
+  }).join('');
+  // Zone list
+  document.getElementById('zone-list').innerHTML=Object.values(zones).sort((a,b)=>b.congestion-a.congestion).map(z=>{
+    const pct=Math.round(z.congestion*100);
+    const col=z.status==='critical'?'var(--red)':z.status==='warning'?'var(--amber)':'var(--green)';
+    return `<div class="zi">
+      <div class="zi-id">${z.zone_id}</div>
+      <div class="zi-name">${z.name}</div>
+      <div class="zi-pct" style="color:${col}">${pct}%</div>
+      <div class="zi-dot" style="background:${col}"></div>
+    </div>`;
+  }).join('');
+  // Info overlay
+  const inc=Object.values(zones).filter(z=>z.status==='critical').length;
+  const adp=Object.values(sigs).filter(s=>s.adaptive).length;
+  document.getElementById('io-inc').textContent=inc;
+  document.getElementById('io-sig').textContent=adp;
+}
+
+// ── DATA LOAD ────────────────────────────────────────────────────────────────
+async function loadState(){
+  const [z,s,m]=await Promise.all([
+    get('/api/traffic/zones'),
+    get('/api/signals/'),
+    get('/api/traffic/metrics')
+  ]);
+  if(z?.zones)z.zones.forEach(zn=>zones[zn.zone_id]=zn);
+  if(s?.signals)s.signals.forEach(sg=>sigs[sg.signal_id]=sg);
+  if(m)document.getElementById('io-eff').textContent=m.flow_efficiency+'%';
+  renderSidebar();
+  redraw();
+}
+
+// ── BOOT ─────────────────────────────────────────────────────────────────────
+setTimeout(()=>{resize();loadState();},80);
+setInterval(loadState,4000);
+setInterval(redraw,1500); // smooth signal pulse animation
+setInterval(()=>document.getElementById('clk').textContent=new Date().toLocaleTimeString('en-IN',{hour12:false})+' IST',1000);
+</script>
+</body>
+</html>

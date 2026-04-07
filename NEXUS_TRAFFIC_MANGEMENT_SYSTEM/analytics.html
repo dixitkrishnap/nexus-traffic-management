@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>NEXUS — Analytics</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{--bg:#060a10;--s1:#0b1018;--s2:#0f1620;--border:#1a2535;--green:#00e676;--amber:#ffab00;--red:#ff1744;--cyan:#00e5ff;--text:#cfd8e3;--muted:#546478;--mono:'IBM Plex Mono',monospace;--ui:'IBM Plex Sans',sans-serif;}
+html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:var(--ui);}
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.04) 3px,rgba(0,0,0,.04) 4px);pointer-events:none;z-index:9999;}
+#top{height:44px;background:var(--s1);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:5px;color:#fff;}
+.logo span{color:var(--cyan);}
+#nav{display:flex;background:var(--s2);border-bottom:1px solid var(--border);}
+.nav-btn{padding:8px 18px;font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;text-decoration:none;display:flex;align-items:center;gap:6px;}
+.nav-btn:hover{color:var(--text);}
+.nav-btn.active{color:var(--cyan);border-bottom-color:var(--cyan);}
+#page{padding:1px;background:var(--border);display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:auto auto auto;gap:1px;}
+.sec{background:var(--bg);}
+.sec-hd{padding:10px 16px;background:var(--s2);border-bottom:1px solid var(--border);font-family:var(--mono);font-size:8px;font-weight:600;letter-spacing:2.5px;color:var(--muted);text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;}
+.badge{font-size:8px;padding:2px 7px;border-radius:2px;letter-spacing:0;}
+.bg{background:rgba(0,230,118,.1);color:var(--green);border:1px solid rgba(0,230,118,.25);}
+.bc{background:rgba(0,229,255,.1);color:var(--cyan);border:1px solid rgba(0,229,255,.25);}
+
+/* KPI CARDS */
+#kpi-strip{grid-column:1/-1;display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--border);}
+.kpi{background:var(--s1);padding:16px 20px;border-top:2px solid var(--border);position:relative;}
+.kpi.g{border-top-color:var(--green);}
+.kpi.c{border-top-color:var(--cyan);}
+.kpi.a{border-top-color:var(--amber);}
+.kpi.r{border-top-color:var(--red);}
+.kpi.b{border-top-color:#2979ff;}
+.kv{font-family:'Bebas Neue',sans-serif;font-size:36px;line-height:1;margin-bottom:4px;}
+.kl{font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;}
+
+/* IOT SENSOR TABLE */
+.iot-tbl{width:100%;border-collapse:collapse;font-size:10px;}
+.iot-tbl th{padding:7px 12px;font-family:var(--mono);font-size:7px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;border-bottom:1px solid var(--border);background:var(--s2);text-align:left;}
+.iot-tbl td{padding:7px 12px;border-bottom:1px solid rgba(26,37,53,.6);}
+.iot-tbl tr:hover td{background:var(--s1);}
+.bar-cell{display:flex;align-items:center;gap:6px;}
+.mini-bar{width:50px;height:4px;background:var(--border);border-radius:2px;overflow:hidden;}
+.mini-fill{height:100%;border-radius:2px;}
+
+/* HOURLY CHART */
+#hourly-chart{padding:12px 16px;}
+#hChart{width:100%;height:100px;display:block;}
+
+/* ZONE RANKING */
+.zr-item{display:flex;align-items:center;gap:10px;padding:7px 14px;border-bottom:1px solid rgba(26,37,53,.6);}
+.zr-rank{font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--muted);width:20px;line-height:1;}
+.zr-name{flex:1;font-size:11px;}
+.zr-bar2{width:90px;height:5px;background:var(--border);border-radius:2px;overflow:hidden;}
+.zr-fill2{height:100%;border-radius:2px;transition:width .6s;}
+.zr-pct2{font-family:var(--mono);font-size:10px;width:32px;text-align:right;font-weight:500;}
+
+/* AI INSIGHT */
+.insight-card{margin:10px;padding:14px;border-radius:3px;background:rgba(0,229,255,.04);border:1px solid rgba(0,229,255,.15);}
+.ic-hd{font-family:var(--mono);font-size:8px;color:var(--cyan);letter-spacing:2px;margin-bottom:8px;}
+.ic-text{font-size:11px;color:var(--text);line-height:1.7;}
+.ic-ask{display:flex;gap:6px;margin-top:10px;}
+.ic-in{flex:1;background:var(--s2);border:1px solid var(--border);color:var(--text);padding:6px 9px;font-family:var(--ui);font-size:11px;border-radius:2px;outline:none;}
+.ic-in:focus{border-color:var(--cyan);}
+.ic-in::placeholder{color:var(--muted);}
+.ic-btn{background:var(--cyan);border:none;color:#000;font-family:var(--mono);font-size:9px;font-weight:700;padding:0 12px;border-radius:2px;cursor:pointer;}
+
+/* EFFICIENCY TREND */
+.eff-row{display:flex;align-items:center;gap:8px;padding:5px 14px;border-bottom:1px solid rgba(26,37,53,.4);}
+.er-date{font-family:var(--mono);font-size:8px;color:var(--muted);width:68px;}
+.er-bar{flex:1;height:8px;background:var(--border);border-radius:2px;overflow:hidden;}
+.er-fill{height:100%;border-radius:2px;background:var(--green);transition:width .8s;}
+.er-val{font-family:var(--mono);font-size:9px;width:36px;text-align:right;}
+
+/* ENV */
+.env-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);margin:1px;}
+.env-item{background:var(--s1);padding:14px;text-align:center;}
+.env-val{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--green);line-height:1;margin-bottom:4px;}
+.env-lbl{font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;}
+</style>
+</head>
+<body>
+<div id="top">
+  <div class="logo">NEX<span>US</span> <span style="font-size:11px;color:var(--muted);font-family:var(--mono);letter-spacing:2px;font-weight:300">ANALYTICS</span></div>
+  <div style="font-family:var(--mono);font-size:10px;color:var(--cyan)" id="clk">--:--:--</div>
+</div>
+<div id="nav">
+  <a class="nav-btn" href="index.html">🖥 CONTROL ROOM</a>
+  <a class="nav-btn" href="map.html">🗺 CITY MAP</a>
+  <a class="nav-btn" href="signals.html">🚦 SIGNAL CONTROL</a>
+  <a class="nav-btn" href="emergency.html">🚨 EMERGENCY</a>
+  <a class="nav-btn active" href="analytics.html">📊 ANALYTICS</a>
+</div>
+
+<div id="page">
+  <!-- KPI STRIP -->
+  <div id="kpi-strip">
+    <div class="kpi g"><div class="kv" id="kV" style="color:var(--green)">—</div><div class="kl">Vehicles Monitored</div></div>
+    <div class="kpi c"><div class="kv" id="kE" style="color:var(--cyan)">—</div><div class="kl">Flow Efficiency</div></div>
+    <div class="kpi a"><div class="kv" id="kD" style="color:var(--amber)">—</div><div class="kl">Avg Delay (min)</div></div>
+    <div class="kpi r"><div class="kv" id="kI" style="color:var(--red)">—</div><div class="kl">Active Incidents</div></div>
+    <div class="kpi b"><div class="kv" id="kS" style="color:#2979ff">—</div><div class="kl">Adaptive Signals</div></div>
+  </div>
+
+  <!-- IOT SENSOR DATA -->
+  <div class="sec">
+    <div class="sec-hd">IoT Sensor Readings — All Zones <span class="badge bg">live</span></div>
+    <table class="iot-tbl">
+      <thead><tr><th>Zone</th><th>Vehicles</th><th>Speed</th><th>Wait</th><th>CO₂</th><th>Occupancy</th></tr></thead>
+      <tbody id="iotBody"></tbody>
+    </table>
+  </div>
+
+  <!-- ZONE RANKING -->
+  <div class="sec">
+    <div class="sec-hd">Zone Congestion Ranking</div>
+    <div id="zoneRank"></div>
+  </div>
+
+  <!-- AI INSIGHT + ENV -->
+  <div class="sec" style="display:flex;flex-direction:column;">
+    <div class="sec-hd">NEXUS AI Insight <span class="badge bc">powered by Claude</span></div>
+    <div class="insight-card">
+      <div class="ic-hd">AI SUMMARY</div>
+      <div class="ic-text" id="aiSummary">Loading AI analysis…</div>
+      <div class="ic-ask">
+        <input class="ic-in" id="aiQ" placeholder="Ask the AI about performance…" onkeydown="if(event.key=='Enter')askAI()">
+        <button class="ic-btn" onclick="askAI()">ASK</button>
+      </div>
+    </div>
+    <div class="sec-hd">Environmental Impact</div>
+    <div class="env-grid">
+      <div class="env-item"><div class="env-val" id="eFuel">—</div><div class="env-lbl">Fuel Saved (L)</div></div>
+      <div class="env-item"><div class="env-val" id="eCO2">—</div><div class="env-lbl">CO₂ Reduced (kg)</div></div>
+      <div class="env-item"><div class="env-val" id="eDec">—</div><div class="env-lbl">LLM Decisions</div></div>
+      <div class="env-item"><div class="env-val" id="eNoise">—</div><div class="env-lbl">Noise Reduction %</div></div>
+    </div>
+  </div>
+
+  <!-- HOURLY VOLUME -->
+  <div class="sec">
+    <div class="sec-hd">Hourly Traffic Volume — Today</div>
+    <div id="hourly-chart"><canvas id="hChart"></canvas></div>
+  </div>
+
+  <!-- EFFICIENCY TREND -->
+  <div class="sec">
+    <div class="sec-hd">7-Day Efficiency Trend</div>
+    <div id="effTrend"></div>
+  </div>
+
+  <!-- SIGNAL PERFORMANCE -->
+  <div class="sec">
+    <div class="sec-hd">Signal Performance</div>
+    <table class="iot-tbl">
+      <thead><tr><th>Signal</th><th>Green%</th><th>Throughput</th><th>Mode</th><th>Zone Cong.</th></tr></thead>
+      <tbody id="sigPerfBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+const API='http://localhost:8000';
+async function get(p){try{const r=await fetch(API+p);return r.ok?await r.json():null;}catch{return null;}}
+async function post(p,b){try{const r=await fetch(API+p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});return r.ok?await r.json():null;}catch{return null;}}
+function colFor(st){return st==='critical'?'#ff1744':st==='warning'?'#ffab00':'#00e676';}
+
+async function loadAll(){
+  const [m,z,d,e,ef,sp]=await Promise.all([
+    get('/api/traffic/metrics'),get('/api/traffic/zones'),
+    get('/api/analytics/daily'),get('/api/analytics/environment'),
+    get('/api/analytics/efficiency'),get('/api/analytics/signals/perf')
+  ]);
+
+  if(m){
+    ['kV','kE','kD','kI','kS'].forEach((id,i)=>{
+      const vals=[m.total_vehicles?.toLocaleString(),m.flow_efficiency+'%',m.avg_delay_min,m.active_incidents,(m.adaptive_signals||12)+'/12'];
+      const el=document.getElementById(id);if(el)el.textContent=vals[i];
+    });
+  }
+
+  if(z?.zones){
+    // IoT Table
+    document.getElementById('iotBody').innerHTML=z.zones.map(zn=>{
+      const pct=Math.round(zn.congestion*100);
+      const col=colFor(zn.status);
+      return `<tr>
+        <td style="font-family:var(--mono);font-size:9px">${zn.zone_id}</td>
+        <td>${zn.vehicles}</td>
+        <td style="font-family:var(--mono);font-size:9px;color:${col}">${zn.speed_ms} m/s</td>
+        <td style="font-family:var(--mono);font-size:9px;color:${zn.wait_time_s>15?'var(--red)':'var(--muted)'}">${zn.wait_time_s}s</td>
+        <td style="font-family:var(--mono);font-size:9px;color:${zn.co2_mgs>2000?'var(--amber)':'var(--muted)'}">${zn.co2_mgs}</td>
+        <td><div class="bar-cell"><div class="mini-bar"><div class="mini-fill" style="width:${pct}%;background:${col}"></div></div><span style="font-family:var(--mono);font-size:9px;color:${col}">${pct}%</span></div></td>
+      </tr>`;
+    }).join('');
+    // Zone ranking
+    const sorted=[...z.zones].sort((a,b)=>b.congestion-a.congestion);
+    document.getElementById('zoneRank').innerHTML=sorted.map((zn,i)=>{
+      const pct=Math.round(zn.congestion*100),col=colFor(zn.status);
+      return `<div class="zr-item">
+        <div class="zr-rank" style="color:${i<3?col:'var(--muted)'}">${i+1}</div>
+        <div class="zr-name">${zn.name}</div>
+        <div class="zr-bar2"><div class="zr-fill2" style="width:${pct}%;background:${col}"></div></div>
+        <div class="zr-pct2" style="color:${col}">${pct}%</div>
+      </div>`;
+    }).join('');
+  }
+
+  if(e){
+    document.getElementById('eFuel').textContent=e.fuel_saved_l_day;
+    document.getElementById('eCO2').textContent=e.co2_reduced_kg_day;
+    document.getElementById('eDec').textContent=e.llm_decisions_today;
+    document.getElementById('eNoise').textContent=e.noise_reduction_pct+'%';
+  }
+
+  if(d?.hourly)drawHourly(d.hourly);
+
+  if(ef?.trend){
+    document.getElementById('effTrend').innerHTML=ef.trend.map(t=>`
+      <div class="eff-row">
+        <div class="er-date">${t.date.slice(5)}</div>
+        <div class="er-bar"><div class="er-fill" style="width:${t.efficiency}%;background:${t.efficiency>75?'var(--green)':t.efficiency>60?'var(--amber)':'var(--red)'}"></div></div>
+        <div class="er-val" style="color:${t.efficiency>75?'var(--green)':t.efficiency>60?'var(--amber)':'var(--red)'}">${t.efficiency}%</div>
+      </div>`).join('');
+  }
+
+  if(sp?.signals){
+    document.getElementById('sigPerfBody').innerHTML=sp.signals.map(s=>`
+      <tr>
+        <td style="font-family:var(--mono);font-size:9px">${s.signal_id.replace('SIG-','')}</td>
+        <td style="font-family:var(--mono);font-size:9px;color:var(--green)">${s.green_pct}%</td>
+        <td style="font-family:var(--mono);font-size:9px">${s.throughput_vph} vph</td>
+        <td><span style="font-family:var(--mono);font-size:8px;padding:2px 5px;border-radius:2px;background:${s.adaptive?'rgba(0,230,118,.1)':'rgba(255,171,0,.1)'};color:${s.adaptive?'var(--green)':'var(--amber)'}">${s.adaptive?'AUTO':'MAN'}</span></td>
+        <td style="font-family:var(--mono);font-size:9px;color:${s.zone_congestion>.65?'var(--red)':s.zone_congestion>.45?'var(--amber)':'var(--green)'}">${Math.round(s.zone_congestion*100)}%</td>
+      </tr>`).join('');
+  }
+
+  // AI Summary
+  const summary=await get('/api/ai/summary');
+  if(summary?.summary)document.getElementById('aiSummary').textContent=summary.summary;
+}
+
+function drawHourly(data){
+  const el=document.getElementById('hChart');
+  const W=el.width=el.offsetWidth||500;const H=el.height=100;
+  const ctx=el.getContext('2d');ctx.clearRect(0,0,W,H);
+  const maxV=Math.max(...data.map(d=>d.vehicles));
+  const now=new Date().getHours();
+  data.forEach((d,i)=>{
+    const x=i/data.length*W;const bw=W/data.length*.8;
+    const bh=(d.vehicles/maxV)*(H-10);
+    const col=d.hour===now?'var(--cyan)':d.vehicles>600?'rgba(255,23,68,.6)':d.vehicles>300?'rgba(255,171,0,.5)':'rgba(0,230,118,.4)';
+    ctx.fillStyle=col;ctx.fillRect(x,H-bh,bw,bh);
+    if(i%4===0){ctx.font='7px IBM Plex Mono';ctx.fillStyle='rgba(84,100,120,.7)';ctx.textAlign='center';ctx.fillText(String(d.hour).padStart(2,'0'),x+bw/2,H-1);}
+  });
+}
+
+async function askAI(){
+  const inp=document.getElementById('aiQ');const q=inp.value.trim();if(!q)return;
+  inp.value='';
+  document.getElementById('aiSummary').textContent='Asking Claude AI…';
+  const r=await post('/api/ai/chat',{message:q,history:[]});
+  if(r?.reply)document.getElementById('aiSummary').textContent=r.reply;
+}
+
+setInterval(loadAll,8000);loadAll();
+setInterval(()=>document.getElementById('clk').textContent=new Date().toLocaleTimeString('en-IN',{hour12:false})+' IST',1000);
+</script>
+</body>
+</html>

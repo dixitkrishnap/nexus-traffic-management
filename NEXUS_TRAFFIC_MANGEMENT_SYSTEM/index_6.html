@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS — Traffic Control Room</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{--bg:#060a10;--s1:#0b1018;--s2:#0f1620;--border:#1a2535;--green:#00e676;--amber:#ffab00;--red:#ff1744;--cyan:#00e5ff;--text:#cfd8e3;--muted:#546478;--mono:'IBM Plex Mono',monospace;--ui:'IBM Plex Sans',sans-serif;}
+html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:var(--ui);}
+/* scanline */
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.04) 3px,rgba(0,0,0,.04) 4px);pointer-events:none;z-index:9999;}
+
+/* TOPBAR */
+#top{height:54px;background:var(--s1);border-bottom:2px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 28px;}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:6px;color:#fff;}
+.logo span{color:var(--green);}
+.tagline{font-family:var(--mono);font-size:9px;letter-spacing:3px;color:var(--muted);margin-top:2px;}
+#top-right{display:flex;gap:20px;align-items:center;}
+.tpill{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;color:var(--muted);}
+.tpill strong{color:var(--text);}
+.led{width:7px;height:7px;border-radius:50%;animation:lp 2s infinite;}
+.led.g{background:var(--green);box-shadow:0 0 8px var(--green);}
+.led.a{background:var(--amber);box-shadow:0 0 8px var(--amber);}
+.led.r{background:var(--red);box-shadow:0 0 8px var(--red);}
+@keyframes lp{0%,100%{opacity:1}50%{opacity:.25}}
+#clk{font-family:var(--mono);font-size:13px;color:var(--cyan);}
+
+/* NAV */
+#nav{display:flex;background:var(--s2);border-bottom:1px solid var(--border);}
+.nav-btn{padding:10px 22px;font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;text-decoration:none;display:flex;align-items:center;gap:7px;}
+.nav-btn:hover{color:var(--text);}
+.nav-btn.active{color:var(--green);border-bottom-color:var(--green);}
+.nav-btn .nb{font-size:14px;}
+
+/* ALERT TICKER */
+#ticker{background:#0a0f18;border-bottom:1px solid var(--border);padding:6px 28px;font-family:var(--mono);font-size:9px;color:var(--muted);display:flex;align-items:center;gap:12px;overflow:hidden;}
+#ticker-inner{display:flex;gap:32px;animation:tick 30s linear infinite;}
+@keyframes tick{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.ta{color:var(--amber);}
+.tr{color:var(--red);}
+.tg{color:var(--green);}
+
+/* METRIC STRIP */
+#metrics{display:grid;grid-template-columns:repeat(5,1fr);border-bottom:1px solid var(--border);}
+.met{padding:18px 24px;border-right:1px solid var(--border);background:var(--s1);position:relative;overflow:hidden;}
+.met::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.met.green::before{background:var(--green);}
+.met.amber::before{background:var(--amber);}
+.met.red::before{background:var(--red);}
+.met.cyan::before{background:var(--cyan);}
+.met.blue::before{background:#2979ff;}
+.met:last-child{border-right:none;}
+.mv{font-family:'Bebas Neue',sans-serif;font-size:40px;line-height:1;margin-bottom:4px;}
+.ml{font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;}
+.mb{height:2px;background:var(--border);margin-top:10px;border-radius:1px;overflow:hidden;}
+.mbf{height:100%;border-radius:1px;transition:width 1s ease;}
+
+/* MAIN */
+#main{display:grid;grid-template-columns:1fr 1fr 320px;gap:1px;background:var(--border);padding:1px;}
+
+/* CARDS */
+.card{background:var(--bg);padding:0;}
+.card-hd{padding:10px 16px;background:var(--s2);border-bottom:1px solid var(--border);font-family:var(--mono);font-size:8px;font-weight:600;letter-spacing:2.5px;color:var(--muted);text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;}
+.chip{font-size:8px;padding:2px 7px;border-radius:2px;letter-spacing:0;}
+.chip.g{background:rgba(0,230,118,.1);color:var(--green);border:1px solid rgba(0,230,118,.25);}
+.chip.a{background:rgba(255,171,0,.1);color:var(--amber);border:1px solid rgba(255,171,0,.25);}
+.chip.r{background:rgba(255,23,68,.1);color:var(--red);border:1px solid rgba(255,23,68,.25);}
+
+/* ZONE TABLE */
+.zt{width:100%;border-collapse:collapse;font-size:11px;}
+.zt th{padding:7px 14px;font-family:var(--mono);font-size:8px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;border-bottom:1px solid var(--border);text-align:left;background:var(--s2);}
+.zt td{padding:8px 14px;border-bottom:1px solid rgba(26,37,53,.7);}
+.zt tr:hover td{background:var(--s1);}
+.zt tr.crit td:first-child{border-left:2px solid var(--red);}
+.zt tr.warn td:first-child{border-left:2px solid var(--amber);}
+.zt tr.ok td:first-child{border-left:2px solid var(--green);}
+.zbar-wrap{width:80px;height:5px;background:var(--border);border-radius:2px;overflow:hidden;display:inline-block;vertical-align:middle;}
+.zbar-fill{height:100%;border-radius:2px;transition:width .5s;}
+.status-pill{font-family:var(--mono);font-size:8px;padding:2px 6px;border-radius:2px;}
+.sp-c{background:rgba(255,23,68,.1);color:var(--red);}
+.sp-w{background:rgba(255,171,0,.1);color:var(--amber);}
+.sp-n{background:rgba(0,230,118,.1);color:var(--green);}
+
+/* SIGNAL MINI GRID */
+#sig-mini{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--border);}
+.sm{background:var(--bg);padding:8px 12px;display:flex;align-items:center;gap:8px;}
+.sm-id{font-family:var(--mono);font-size:8px;color:var(--muted);width:52px;flex-shrink:0;}
+.sm-phases{display:flex;gap:2px;flex:1;}
+.sm-ph{height:12px;flex:1;border-radius:1px;transition:all .25s;}
+.ph-G{background:rgba(0,230,118,.18);border:1px solid rgba(0,230,118,.45);}
+.ph-Y{background:rgba(255,171,0,.18);border:1px solid rgba(255,171,0,.45);}
+.ph-R{background:rgba(255,23,68,.18);border:1px solid rgba(255,23,68,.45);}
+.ph-active.ph-G{background:rgba(0,230,118,.55);}
+.ph-active.ph-Y{background:rgba(255,171,0,.55);}
+.ph-active.ph-R{background:rgba(255,23,68,.55);}
+.sm-dur{font-family:var(--mono);font-size:8px;color:var(--muted);width:24px;text-align:right;flex-shrink:0;}
+
+/* AI CHAT */
+#chat-msgs{height:220px;overflow-y:auto;padding:10px 14px;display:flex;flex-direction:column;gap:6px;}
+#chat-msgs::-webkit-scrollbar{width:2px;}
+#chat-msgs::-webkit-scrollbar-thumb{background:var(--border);}
+.cm{max-width:92%;padding:7px 10px;border-radius:3px;font-size:10px;line-height:1.6;animation:fup .2s ease;}
+@keyframes fup{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.cm.u{align-self:flex-end;background:var(--s2);border:1px solid var(--border);color:var(--cyan);font-family:var(--mono);font-size:9px;}
+.cm.a{align-self:flex-start;background:var(--s1);border:1px solid var(--border);}
+.cmh{font-family:var(--mono);font-size:7px;color:var(--green);margin-bottom:3px;letter-spacing:1.5px;}
+.typing span{width:4px;height:4px;border-radius:50%;background:var(--muted);display:inline-block;margin:0 1px;animation:td 1.2s infinite;}
+.typing span:nth-child(2){animation-delay:.2s;}.typing span:nth-child(3){animation-delay:.4s;}
+@keyframes td{0%,100%{opacity:.2}50%{opacity:1}}
+#chat-foot{border-top:1px solid var(--border);padding:8px 12px;display:flex;gap:6px;}
+.ci{flex:1;background:var(--s2);border:1px solid var(--border);color:var(--text);padding:6px 9px;font-family:var(--ui);font-size:11px;border-radius:2px;outline:none;min-width:0;}
+.ci:focus{border-color:var(--cyan);}
+.ci::placeholder{color:var(--muted);}
+.cs{background:var(--cyan);border:none;color:#000;font-family:var(--mono);font-size:9px;font-weight:700;padding:0 12px;border-radius:2px;cursor:pointer;}
+
+/* ALERTS */
+.al{display:flex;gap:8px;padding:7px 14px;border-bottom:1px solid rgba(26,37,53,.7);animation:fup .25s ease;}
+.alb{width:2px;flex-shrink:0;border-radius:1px;align-self:stretch;min-height:24px;}
+.alb.r{background:var(--red);}
+.alb.a{background:var(--amber);}
+.alb.g{background:var(--green);}
+.alb.c{background:var(--cyan);}
+.alt{font-family:var(--mono);font-size:7px;color:var(--muted);margin-bottom:1px;}
+.alm{font-size:10px;line-height:1.4;}
+
+/* MODULE LINKS */
+.mod-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px 14px;}
+.mod-btn{padding:12px;border-radius:3px;cursor:pointer;text-decoration:none;display:flex;flex-direction:column;gap:4px;transition:all .15s;border:1px solid var(--border);background:var(--s1);}
+.mod-btn:hover{border-color:var(--green);background:rgba(0,230,118,.04);}
+.mod-icon{font-size:20px;}
+.mod-title{font-family:var(--mono);font-size:9px;font-weight:600;color:var(--text);letter-spacing:1px;}
+.mod-desc{font-size:9px;color:var(--muted);line-height:1.5;}
+</style>
+</head>
+<body>
+
+<div id="top">
+  <div>
+    <div class="logo">NEX<span>US</span></div>
+    <div class="tagline">AUTOMATED TRAFFIC MANAGEMENT SYSTEM — CHENNAI METRO</div>
+  </div>
+  <div id="top-right">
+    <div class="tpill"><div class="led g"></div>All systems online</div>
+    <div class="tpill"><div class="led g" id="eled"></div><strong id="einc">0</strong> incidents</div>
+    <div class="tpill"><div class="led g"></div>IoT sensors active</div>
+    <div id="clk">--:--:--</div>
+  </div>
+</div>
+
+<div id="nav">
+  <a class="nav-btn active" href="index.html"><span class="nb">🖥</span>CONTROL ROOM</a>
+  <a class="nav-btn" href="map.html"><span class="nb">🗺</span>CITY MAP</a>
+  <a class="nav-btn" href="signals.html"><span class="nb">🚦</span>SIGNAL CONTROL</a>
+  <a class="nav-btn" href="emergency.html"><span class="nb">🚨</span>EMERGENCY</a>
+  <a class="nav-btn" href="analytics.html"><span class="nb">📊</span>ANALYTICS</a>
+</div>
+
+<div id="ticker">
+  <span style="color:var(--cyan);flex-shrink:0;">▶ LIVE</span>
+  <div id="ticker-inner">
+    <span class="tr">⚠ T.Nagar critical — 94% occupancy</span>
+    <span class="ta">● Koyambedu congestion building</span>
+    <span class="tg">✔ SIG-A14 adaptive timing +18% throughput</span>
+    <span class="ta">● Velachery Roundabout 87% load</span>
+    <span class="tg">✔ Ambulance corridor cleared — Route 7B</span>
+    <span class="tr">⚠ T.Nagar critical — 94% occupancy</span>
+    <span class="ta">● Koyambedu congestion building</span>
+    <span class="tg">✔ SIG-A14 adaptive timing +18% throughput</span>
+    <span class="ta">● Velachery Roundabout 87% load</span>
+    <span class="tg">✔ Ambulance corridor cleared — Route 7B</span>
+  </div>
+</div>
+
+<div id="metrics">
+  <div class="met green"><div class="mv" id="mV" style="color:var(--green)">—</div><div class="ml">Vehicles Monitored</div><div class="mb"><div class="mbf" id="mVb" style="background:var(--green);width:0"></div></div></div>
+  <div class="met cyan"><div class="mv" id="mE" style="color:var(--cyan)">—</div><div class="ml">Flow Efficiency</div><div class="mb"><div class="mbf" id="mEb" style="background:var(--cyan);width:0"></div></div></div>
+  <div class="met amber"><div class="mv" id="mD" style="color:var(--amber)">—</div><div class="ml">Avg Delay (min)</div><div class="mb"><div class="mbf" id="mDb" style="background:var(--amber);width:0"></div></div></div>
+  <div class="met red"><div class="mv" id="mI" style="color:var(--red)">—</div><div class="ml">Active Incidents</div><div class="mb"><div class="mbf" id="mIb" style="background:var(--red);width:0"></div></div></div>
+  <div class="met blue"><div class="mv" id="mS" style="color:#2979ff">—</div><div class="ml">Adaptive Signals</div><div class="mb"><div class="mbf" id="mSb" style="background:#2979ff;width:0"></div></div></div>
+</div>
+
+<div id="main">
+  <!-- ZONE STATUS TABLE -->
+  <div class="card">
+    <div class="card-hd">Zone Status — All 12 Zones <span class="chip g" id="zbadge">live</span></div>
+    <table class="zt">
+      <thead><tr><th>Zone</th><th>Name</th><th>Congestion</th><th>Speed</th><th>Wait</th><th>Status</th></tr></thead>
+      <tbody id="zTbody"></tbody>
+    </table>
+  </div>
+
+  <!-- SIGNAL MINI + MODULES -->
+  <div class="card" style="display:flex;flex-direction:column;">
+    <div class="card-hd">Signal Overview <span class="chip a" id="sigbadge">12 signals</span></div>
+    <div id="sig-mini"></div>
+    <div class="card-hd" style="margin-top:1px;">System Modules</div>
+    <div class="mod-grid">
+      <a class="mod-btn" href="map.html"><div class="mod-icon">🗺</div><div class="mod-title">CITY MAP</div><div class="mod-desc">Live road network with vehicles, signals & congestion</div></a>
+      <a class="mod-btn" href="signals.html"><div class="mod-icon">🚦</div><div class="mod-title">SIGNAL CONTROL</div><div class="mod-desc">Phase timeline, manual override, LLM adaptive timing</div></a>
+      <a class="mod-btn" href="emergency.html"><div class="mod-icon">🚨</div><div class="mod-title">EMERGENCY</div><div class="mod-desc">Corridor activation for ambulance, fire & VIP</div></a>
+      <a class="mod-btn" href="analytics.html"><div class="mod-icon">📊</div><div class="mod-title">ANALYTICS</div><div class="mod-desc">IoT sensor data, efficiency trends & AI insights</div></a>
+    </div>
+  </div>
+
+  <!-- RIGHT: ALERTS + AI CHAT -->
+  <div class="card" style="display:flex;flex-direction:column;">
+    <div class="card-hd">Live Alerts <span class="chip r" id="alertbadge">0</span></div>
+    <div id="alertList" style="flex:1;overflow-y:auto;max-height:200px;"></div>
+    <div class="card-hd">NEXUS AI — Operator Assistant</div>
+    <div id="chat-msgs"></div>
+    <div id="chat-foot">
+      <input class="ci" id="cin" placeholder="Ask about zones, signals, incidents…" onkeydown="if(event.key=='Enter')sendChat()">
+      <button class="cs" onclick="sendChat()">ASK</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API='http://localhost:8000';
+const hist=[];
+
+async function get(p){try{const r=await fetch(API+p);return r.ok?await r.json():null;}catch{return null;}}
+async function post(p,b){try{const r=await fetch(API+p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});return r.ok?await r.json():null;}catch{return null;}}
+
+function colFor(st){return st==='critical'?'var(--red)':st==='warning'?'var(--amber)':'var(--green)';}
+function rowCls(st){return st==='critical'?'crit':st==='warning'?'warn':'ok';}
+function spCls(st){return st==='critical'?'sp-c':st==='warning'?'sp-w':'sp-n';}
+
+async function loadAll(){
+  const [m,z,s,a]=await Promise.all([
+    get('/api/traffic/metrics'),
+    get('/api/traffic/zones'),
+    get('/api/signals/'),
+    get('/api/alerts/')
+  ]);
+
+  if(m){
+    const sv=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+    const sw=(id,w)=>{const e=document.getElementById(id);if(e)e.style.width=w+'%';};
+    sv('mV',m.total_vehicles?.toLocaleString()||'—');
+    sv('mE',m.flow_efficiency+'%');
+    sv('mD',m.avg_delay_min);
+    sv('mI',m.active_incidents);
+    sv('mS',(m.adaptive_signals||12)+'/12');
+    sv('einc',m.active_incidents);
+    sw('mVb',Math.min(100,Math.round((m.total_vehicles||0)/50)));
+    sw('mEb',m.flow_efficiency||0);
+    sw('mDb',Math.min(100,(m.avg_delay_min||0)*8));
+    sw('mIb',Math.min(100,(m.active_incidents||0)*15));
+    sw('mSb',Math.round(((m.adaptive_signals||12)/12)*100));
+    document.getElementById('eled').className='led '+(m.active_incidents>0?'r':'g');
+  }
+
+  if(z?.zones){
+    const sorted=z.zones.sort((a,b)=>b.congestion-a.congestion);
+    document.getElementById('zTbody').innerHTML=sorted.map(z=>{
+      const pct=Math.round(z.congestion*100);
+      const col=colFor(z.status);
+      return `<tr class="${rowCls(z.status)}">
+        <td style="font-family:var(--mono);font-size:9px;color:var(--muted)">${z.zone_id}</td>
+        <td style="font-size:11px">${z.name}</td>
+        <td><div class="zbar-wrap"><div class="zbar-fill" style="width:${pct}%;background:${col}"></div></div> <span style="font-family:var(--mono);font-size:9px;color:${col};margin-left:4px">${pct}%</span></td>
+        <td style="font-family:var(--mono);font-size:9px">${z.speed_ms} m/s</td>
+        <td style="font-family:var(--mono);font-size:9px">${z.wait_time_s}s</td>
+        <td><span class="status-pill ${spCls(z.status)}">${z.status.toUpperCase()}</span></td>
+      </tr>`;
+    }).join('');
+  }
+
+  if(s?.signals){
+    document.getElementById('sig-mini').innerHTML=s.signals.map(sig=>{
+      const col=sig.phase==='G'?'var(--green)':sig.phase==='Y'?'var(--amber)':'var(--red)';
+      return `<div class="sm">
+        <div class="sm-id">${sig.signal_id.replace('SIG-','')}</div>
+        <div class="sm-phases">
+          ${['G','Y','R'].map(p=>`<div class="sm-ph ph-${p}${sig.phase===p?' ph-active':''}"></div>`).join('')}
+        </div>
+        <div class="sm-dur" style="color:${col}">${sig.green_s}s</div>
+      </div>`;
+    }).join('');
+    document.getElementById('sigbadge').textContent=s.signals.filter(s=>s.adaptive).length+' adaptive';
+  }
+
+  if(a?.alerts){
+    document.getElementById('alertbadge').textContent=a.alerts.length;
+    const lvlCol={critical:'r',warning:'a',info:'c',success:'g'};
+    document.getElementById('alertList').innerHTML=a.alerts.slice(0,8).map(al=>`
+      <div class="al">
+        <div class="alb ${lvlCol[al.level]||'c'}"></div>
+        <div>
+          <div class="alt">${al.timestamp?.slice(11,19)||''} · ${al.alert_type}</div>
+          <div class="alm">${al.message}</div>
+        </div>
+      </div>`).join('');
+  }
+}
+
+function addMsg(txt,role,acts=[]){
+  const a=document.getElementById('chat-msgs');
+  const d=document.createElement('div');d.className='cm '+role;
+  if(role==='a')d.innerHTML=`<div class="cmh">NEXUS AI</div>${txt}${acts.map(a=>`<span style="display:inline-block;margin:3px 2px 0;font-size:7px;padding:2px 5px;background:rgba(0,230,118,.08);border:1px solid rgba(0,230,118,.2);border-radius:2px;color:var(--green);font-family:var(--mono)">⚡ ${a}</span>`).join('')}`;
+  else d.textContent=txt;
+  a.appendChild(d);a.scrollTop=a.scrollHeight;
+}
+function showTyping(){
+  const a=document.getElementById('chat-msgs');
+  const d=document.createElement('div');d.className='cm a';d.id='typ';
+  d.innerHTML='<div class="cmh">NEXUS AI</div><span class="typing"><span></span><span></span><span></span></span>';
+  a.appendChild(d);a.scrollTop=a.scrollHeight;return d;
+}
+async function sendChat(){
+  const inp=document.getElementById('cin');
+  const msg=inp.value.trim();if(!msg)return;
+  inp.value='';addMsg(msg,'u');hist.push({role:'user',content:msg});
+  const t=showTyping();
+  const r=await post('/api/ai/chat',{message:msg,history:hist.slice(-6)});
+  t.remove();
+  addMsg(r?.reply||'Backend not reachable.','a',r?.actions||[]);
+  if(r?.reply)hist.push({role:'assistant',content:r.reply});
+}
+
+setInterval(loadAll,5000);loadAll();
+setInterval(()=>document.getElementById('clk').textContent=new Date().toLocaleTimeString('en-IN',{hour12:false})+' IST',1000);
+setTimeout(()=>addMsg('Control room online. All 12 zones monitored, 12 signals on adaptive LLM control. IoT sensors reporting every 5 seconds. Ask me anything.','a',['Backend connected']),600);
+</script>
+</body>
+</html>

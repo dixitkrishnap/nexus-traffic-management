@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>NEXUS — Signal Control</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{--bg:#060a10;--s1:#0b1018;--s2:#0f1620;--border:#1a2535;--green:#00e676;--amber:#ffab00;--red:#ff1744;--cyan:#00e5ff;--text:#cfd8e3;--muted:#546478;--mono:'IBM Plex Mono',monospace;--ui:'IBM Plex Sans',sans-serif;}
+html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:var(--ui);}
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.04) 3px,rgba(0,0,0,.04) 4px);pointer-events:none;z-index:9999;}
+#top{height:44px;background:var(--s1);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:5px;color:#fff;}
+.logo span{color:var(--green);}
+#nav{display:flex;background:var(--s2);border-bottom:1px solid var(--border);}
+.nav-btn{padding:8px 18px;font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;text-decoration:none;display:flex;align-items:center;gap:6px;}
+.nav-btn:hover{color:var(--text);}
+.nav-btn.active{color:var(--green);border-bottom-color:var(--green);}
+
+/* PAGE LAYOUT */
+#page{display:grid;grid-template-columns:1fr 340px;gap:1px;background:var(--border);margin:1px;}
+
+.sec{background:var(--bg);}
+.sec-hd{padding:10px 16px;background:var(--s2);border-bottom:1px solid var(--border);font-family:var(--mono);font-size:8px;font-weight:600;letter-spacing:2.5px;color:var(--muted);text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;}
+.badge{font-size:8px;padding:2px 7px;border-radius:2px;letter-spacing:0;}
+.bg{background:rgba(0,230,118,.1);color:var(--green);border:1px solid rgba(0,230,118,.25);}
+.ba{background:rgba(255,171,0,.1);color:var(--amber);border:1px solid rgba(255,171,0,.25);}
+.br{background:rgba(255,23,68,.1);color:var(--red);border:1px solid rgba(255,23,68,.25);}
+
+/* SIGNAL CARDS */
+#sig-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);}
+.sig-card{background:var(--bg);padding:14px;border-left:3px solid var(--border);transition:border-color .2s;}
+.sig-card.G{border-left-color:var(--green);}
+.sig-card.Y{border-left-color:var(--amber);}
+.sig-card.R{border-left-color:var(--red);}
+.sc-id{font-family:var(--mono);font-size:10px;font-weight:600;margin-bottom:2px;color:var(--text);}
+.sc-name{font-size:10px;color:var(--muted);margin-bottom:10px;}
+.sc-phases{display:flex;gap:3px;margin-bottom:8px;}
+.sc-ph{flex:1;height:18px;border-radius:2px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:8px;color:rgba(255,255,255,.5);transition:all .25s;}
+.sph-G{background:rgba(0,230,118,.15);border:1px solid rgba(0,230,118,.4);}
+.sph-Y{background:rgba(255,171,0,.15);border:1px solid rgba(255,171,0,.4);}
+.sph-R{background:rgba(255,23,68,.15);border:1px solid rgba(255,23,68,.4);}
+.sph-G.act{background:rgba(0,230,118,.5);border-color:var(--green);}
+.sph-Y.act{background:rgba(255,171,0,.5);border-color:var(--amber);}
+.sph-R.act{background:rgba(255,23,68,.5);border-color:var(--red);}
+.sc-bottom{display:flex;align-items:center;justify-content:space-between;gap:6px;}
+.sc-green-lbl{font-family:var(--mono);font-size:8px;color:var(--muted);}
+.sc-input{width:42px;background:var(--s2);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:9px;padding:3px 5px;border-radius:2px;text-align:center;outline:none;}
+.sc-input:focus{border-color:var(--amber);}
+.sc-set{font-family:var(--mono);font-size:8px;padding:3px 7px;background:rgba(255,171,0,.08);border:1px solid rgba(255,171,0,.3);color:var(--amber);border-radius:2px;cursor:pointer;}
+.sc-set:hover{background:rgba(255,171,0,.2);}
+.sc-auto{font-family:var(--mono);font-size:8px;padding:3px 7px;background:rgba(0,230,118,.08);border:1px solid rgba(0,230,118,.3);color:var(--green);border-radius:2px;cursor:pointer;}
+.sc-auto:hover{background:rgba(0,230,118,.2);}
+.sc-mode{font-family:var(--mono);font-size:8px;color:var(--green);}
+.sc-mode.man{color:var(--amber);}
+
+/* TIMELINE */
+#timeline{padding:8px 0;}
+.tl-row{display:flex;align-items:center;gap:8px;padding:3px 14px;border-bottom:1px solid rgba(26,37,53,.5);}
+.tl-id{font-family:var(--mono);font-size:8px;color:var(--muted);width:52px;flex-shrink:0;text-align:right;}
+.tl-track{flex:1;height:13px;background:var(--s2);border-radius:1px;overflow:hidden;position:relative;border:1px solid var(--border);}
+.tl-phases{display:flex;height:100%;}
+.tl-G{background:rgba(0,230,118,.65);}
+.tl-Y{background:rgba(255,171,0,.75);}
+.tl-R{background:rgba(255,23,68,.6);}
+.tl-cur{position:absolute;top:0;bottom:0;width:1.5px;background:rgba(255,255,255,.6);}
+.tl-state{font-family:var(--mono);font-size:9px;width:50px;flex-shrink:0;text-align:right;}
+
+/* RIGHT PANEL */
+.opt-card{padding:12px 14px;border-bottom:1px solid var(--border);}
+.opt-title{font-family:var(--mono);font-size:9px;font-weight:600;color:var(--text);margin-bottom:6px;letter-spacing:1px;}
+.opt-desc{font-size:10px;color:var(--muted);line-height:1.6;margin-bottom:10px;}
+.opt-btn{font-family:var(--mono);font-size:9px;padding:7px 14px;border-radius:3px;cursor:pointer;width:100%;text-align:center;transition:all .15s;display:block;margin-bottom:5px;border:1px solid;}
+.ob-g{color:var(--green);border-color:rgba(0,230,118,.4);background:rgba(0,230,118,.06);}
+.ob-g:hover{background:rgba(0,230,118,.18);}
+.ob-a{color:var(--amber);border-color:rgba(255,171,0,.4);background:rgba(255,171,0,.06);}
+.ob-a:hover{background:rgba(255,171,0,.18);}
+.ob-r{color:var(--red);border-color:rgba(255,23,68,.4);background:rgba(255,23,68,.06);}
+.ob-r:hover{background:rgba(255,23,68,.18);}
+#opt-result{font-family:var(--mono);font-size:9px;color:var(--muted);padding:8px 14px;line-height:1.8;max-height:200px;overflow-y:auto;}
+</style>
+</head>
+<body>
+<div id="top">
+  <div class="logo">NEX<span>US</span> <span style="font-size:11px;color:var(--muted);font-family:var(--mono);letter-spacing:2px;font-weight:300">SIGNAL CONTROL</span></div>
+  <div style="font-family:var(--mono);font-size:10px;color:var(--cyan)" id="clk">--:--:--</div>
+</div>
+<div id="nav">
+  <a class="nav-btn" href="index.html">🖥 CONTROL ROOM</a>
+  <a class="nav-btn" href="map.html">🗺 CITY MAP</a>
+  <a class="nav-btn active" href="signals.html">🚦 SIGNAL CONTROL</a>
+  <a class="nav-btn" href="emergency.html">🚨 EMERGENCY</a>
+  <a class="nav-btn" href="analytics.html">📊 ANALYTICS</a>
+</div>
+
+<div id="page">
+  <div class="sec">
+    <div class="sec-hd">All 12 Signal Controllers <span class="badge bg" id="adpBadge">12 adaptive</span></div>
+    <div id="sig-grid"></div>
+    <div class="sec-hd" style="margin-top:1px;">Phase Timeline — Live Cycle View <span class="badge ba">real-time</span></div>
+    <div id="timeline"></div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-hd">LLM Optimisation</div>
+    <div class="opt-card">
+      <div class="opt-title">AI SIGNAL RECOMMENDATIONS</div>
+      <div class="opt-desc">Claude AI analyses live IoT sensor data and recommends optimal green durations for each intersection.</div>
+      <button class="opt-btn ob-g" onclick="getOptimise()">▶ RUN LLM OPTIMISATION</button>
+      <button class="opt-btn ob-a" onclick="applyAll()">⚡ APPLY ALL RECOMMENDATIONS</button>
+      <button class="opt-btn ob-g" onclick="restoreAll()">↺ RESTORE ALL TO ADAPTIVE</button>
+    </div>
+    <div id="opt-result">Click "Run LLM Optimisation" to get AI recommendations…</div>
+
+    <div class="sec-hd">Quick Actions</div>
+    <div class="opt-card">
+      <div class="opt-title">BULK OPERATIONS</div>
+      <button class="opt-btn ob-g" onclick="bulkGreen(30)">Set all GREEN to 30s</button>
+      <button class="opt-btn ob-a" onclick="bulkGreen(60)">Set all GREEN to 60s</button>
+      <button class="opt-btn ob-r" onclick="bulkGreen(90)">Set all GREEN to 90s (max)</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API='http://localhost:8000';
+let sigs={},optRecs=[];
+async function get(p){try{const r=await fetch(API+p);return r.ok?await r.json():null;}catch{return null;}}
+async function post(p,b){try{const r=await fetch(API+p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});return r.ok?await r.json():null;}catch{return null;}}
+async function put(p,b){try{const r=await fetch(API+p,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});return r.ok?await r.json():null;}catch{return null;}}
+
+async function loadSigs(){
+  const s=await get('/api/signals/');
+  if(!s?.signals)return;
+  s.signals.forEach(sg=>sigs[sg.signal_id]=sg);
+  renderSigs();renderTimeline();
+  document.getElementById('adpBadge').textContent=s.signals.filter(s=>s.adaptive).length+' adaptive';
+}
+
+function renderSigs(){
+  document.getElementById('sig-grid').innerHTML=Object.values(sigs).map(s=>{
+    const col=s.phase==='G'?'var(--green)':s.phase==='Y'?'var(--amber)':'var(--red)';
+    return `<div class="sig-card ${s.phase}">
+      <div class="sc-id">${s.signal_id}</div>
+      <div class="sc-name">${s.intersection}</div>
+      <div class="sc-phases">
+        ${['G','Y','R'].map(p=>`<div class="sc-ph sph-${p}${s.phase===p?' act':''}">${p==='G'?'GRN':p==='Y'?'YLW':'RED'}</div>`).join('')}
+      </div>
+      <div class="sc-bottom">
+        <span class="sc-green-lbl">Green:</span>
+        <input class="sc-input" id="gi_${s.signal_id}" value="${s.green_s}" type="number" min="10" max="120">
+        <span class="sc-set" onclick="setGreen('${s.signal_id}')">SET</span>
+        <span class="sc-auto" onclick="setAuto('${s.signal_id}')">AUTO</span>
+        <span class="sc-mode${s.adaptive?'':' man'}">${s.adaptive?'AUTO':'MAN'}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderTimeline(){
+  document.getElementById('timeline').innerHTML=Object.values(sigs).map(s=>{
+    const cyc=s.green_s+s.yellow_s+s.red_s;
+    const pct=(s.elapsed_s/cyc*100).toFixed(1);
+    const col=s.phase==='G'?'var(--green)':s.phase==='Y'?'var(--amber)':'var(--red)';
+    const phases=['G','Y','R','G','Y','R'].map(p=>{const d=p==='G'?s.green_s:p==='Y'?s.yellow_s:s.red_s;return`<div class="tl-${p}" style="width:${d/cyc/2*100}%"></div>`;}).join('');
+    return `<div class="tl-row">
+      <div class="tl-id">${s.signal_id.replace('SIG-','')}</div>
+      <div class="tl-track"><div class="tl-phases">${phases}</div><div class="tl-cur" style="left:${pct%100}%"></div></div>
+      <div class="tl-state" style="color:${col}">${s.phase} ${s.green_s}s</div>
+    </div>`;
+  }).join('');
+}
+
+async function setGreen(id){
+  const val=parseInt(document.getElementById('gi_'+id).value);
+  if(val<10||val>120)return alert('Green must be 10-120s');
+  const r=await put('/api/signals/'+id,{green_s:val,reason:'Operator override'});
+  if(r)sigs[id]=r;
+  renderSigs();renderTimeline();
+}
+async function setAuto(id){
+  await post('/api/signals/'+id+'/reset',{});
+  await loadSigs();
+}
+async function getOptimise(){
+  document.getElementById('opt-result').textContent='Running LLM analysis…';
+  const r=await get('/api/signals/optimize');
+  if(!r?.recommendations){document.getElementById('opt-result').textContent='Error — is backend running?';return;}
+  optRecs=r.recommendations;
+  document.getElementById('opt-result').innerHTML=optRecs.map(rc=>{
+    const d=rc.delta_s;const col=d>0?'var(--green)':d<0?'var(--red)':'var(--muted)';
+    const arrow=d>0?'↑':d<0?'↓':'→';
+    return `<div style="padding:5px 0;border-bottom:1px solid var(--border);line-height:1.7">
+      <span style="color:var(--text);font-weight:600">${rc.signal_id}</span>
+      <span style="color:var(--muted)"> ${rc.current_green_s}s</span>
+      <span style="color:${col}"> ${arrow} ${rc.recommended_green_s}s</span><br>
+      <span style="font-size:8px;color:var(--muted)">${rc.reasoning}</span>
+    </div>`;
+  }).join('');
+}
+async function applyAll(){
+  if(!optRecs.length){alert('Run LLM optimisation first');return;}
+  const updates=optRecs.map(r=>({signal_id:r.signal_id,green_s:r.recommended_green_s}));
+  await post('/api/signals/bulk-update',{updates});
+  await loadSigs();
+  alert('All LLM recommendations applied!');
+}
+async function restoreAll(){
+  for(const sid of Object.keys(sigs)){await post('/api/signals/'+sid+'/reset',{});}
+  await loadSigs();
+}
+async function bulkGreen(val){
+  const updates=Object.keys(sigs).map(id=>({signal_id:id,green_s:val}));
+  await post('/api/signals/bulk-update',{updates});
+  await loadSigs();
+}
+
+setInterval(loadSigs,3000);loadSigs();
+setInterval(()=>document.getElementById('clk').textContent=new Date().toLocaleTimeString('en-IN',{hour12:false})+' IST',1000);
+</script>
+</body>
+</html>
